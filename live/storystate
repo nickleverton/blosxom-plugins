@@ -1,6 +1,6 @@
 # Blosxom Plugin: storystate
 # Author(s): Jason Clark
-# Version: 0+1i
+# Version: 0+2i
 # Blosxom Home/Docs/Licensing: http://www.blosxom.com
 # Storystate plugin Home/Docs/Licensing: 
 #     http://jclark.org/weblog/WebDev/Blosxom/plugins/storystate
@@ -31,7 +31,7 @@ $writeback_messageN = '<$writeback::count /> comments';
 use vars qw/$writeback_message $permalink $blogroot
             $archive $datepermalink $anypermalink
             $category $writeback_closed $permalink_wbopen 
-	    $permalink_wbclosed /;
+	    $permalink_wbclosed $writeback_type/;
 
 @mnth = ('', "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec");
 
@@ -71,7 +71,8 @@ sub head{
     $datepermalink = $undef;
     $anypermalink  = $permalink || $datepermalink ? 1 : undef;
     $category  = !$anypermalink && !$blogroot && !$archive ? 1 : undef;
-
+    $rqst_category = $blosxom::path_info;
+    $rqst_category =~ s#/[^/]+\.[^/]+$##;
   return 1;
 }
 
@@ -132,6 +133,12 @@ $anypermalink   true if request url is either of above
 $blogroot	true if request is for blog's root e.g. / or /index.html
 $archive	true if request if date style, e.g. /2003/09
 $category	true if request is subdir style, e.g. /this/that
+
+There is request-level text variable:
+
+$rqst_category  the category in the request.  Similar to $blosxom::path, but
+                available in the head.  Mixed mode (category+date) request
+                are ok, only returns category.
 
 The story-specific flag variables are:
 
@@ -228,14 +235,15 @@ Jason Clark  (jason@jclark.org; http://jclark.org/weblog)
 
 =head1 See Also
 
-Blosxom Home/Docs/Licensing: http://www.blosxom.com
+Blosxom Home/Docs/Licensing: Http://Www.Raelity.Org/Apps/Blosxom/
 
-Blosxom Plugin Docs: http://www.blosxom.com/documentation/users/plugins.html
-
+Blosxom Plugin Docs: Http://Www.Raelity.Org/Apps/Blosxom/Plugin.Shtml
 
 =head1 Bugs
 
-Undoubtedly
+Maybe not a bug, but does not follow normal Blosxom plugin convention of
+package name matching plugin name.  Package name is 'sh' for brevity; plugin
+name is 'shorthand' for clarity.
 
 =head1 License
 
