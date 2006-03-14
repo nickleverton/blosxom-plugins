@@ -1,6 +1,6 @@
 # Blosxom plugin: storytitle
 # Author(s): Struan Donald <code@exo.org.uk>
-# Version: 0.5
+# Version: 0.6
 # Documentation: see bottom of file or perldoc title
 
 package storytitle;
@@ -36,7 +36,7 @@ sub head {
         $title = "$blosxom::path_info_yr $blosxom::path_info_mo";
         
     } elsif ($dir =~ m#(.*?)/?([\-\.\w]+)\.(\w+)$# and $2 ne 'index') {
-        $file = join('/', $blosxom::datadir, $1, "$2.txt");
+        $file = join('/', $blosxom::datadir, $1, "$2.$blosxom::file_extension");
         my $fh = new FileHandle;
         if (-f "$file" && $fh->open("< $file")) {
             chomp($title = <$fh>);
@@ -81,9 +81,11 @@ You can also individually configure the left and right sided seperators with the
 
 =head1 VERSION
 
-0.5
+0.6
 
 =head2 CHANGES
+
+0.6 - Now uses the users file extension setting rather than always .txt
 
 0.5 - deals with filenames with like foo.bar.txt and foo-bar.txt (thanks to
       Antti Vähä-Sipilä for pointing this out)
@@ -103,6 +105,8 @@ Struan Donald <code@exo.org.uk>, http://exo.org.uk/code/
 
 Lim Chee Aun <http://phoenity.com/> for the left/right sided titles idea.
 
+Anthony DeLorenzo <anthony.delorenzo@gmail.com> for fix to make it use the users file extension setting.
+
 =head1 SEE ALSO
 
 Blosxom Home/Docs/Licensing: http://www.raelity.org/apps/blosxom/
@@ -111,7 +115,7 @@ Blosxom Plugin Docs: http://www.raelity.org/apps/blosxom/plugin.shtml
 
 =head1 COPYRIGHT
 
-Copyright (C) 2003 Struan Donald. 
+Copyright (C) 2003-2005 Struan Donald. 
 
 This program is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
