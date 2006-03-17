@@ -1,6 +1,6 @@
 # Blosxom Plugin: photogallery
 # Author(s): DeWitt Clinton <dewitt@unto.net>
-# Version: 0.7
+# Version: 0.8
 # Documentation: See the bottom of this file or 
 # type: perldoc photogallery
 
@@ -103,11 +103,11 @@ sub print_gallery_thumbs
     my $thumbnail_url = "$public_url/$hashed_file";
     my $large_url = "$blosxom::url$path?image=$image";
     $photogallery .= "<td><a href=\"$large_url\">";
-    $photogallery .= "<img border=\"0\" src=\"$thumbnail_url\"></a></td>";
+    $photogallery .= "<img border=\"0\" src=\"$thumbnail_url\" /></a></td>";
 
     if ( $count % $columns == 0 )
     {
-      $photogallery .= "</tr>";
+      $photogallery .= "</tr><tr>";
     }
 
     $count++;
@@ -151,6 +151,8 @@ sub print_image
   $photogallery .= "<p><b>$caption</b></p>" if defined $caption;
   $photogallery .= "<center><a href=\"$full_url\">" . 
     "<img border=\"0\" src=\"$large_url\"></a></center>";
+  $photogallery .= "<p align=\"right\"><i>(click image to enlarge)</i></p>";
+
 }
 
 
@@ -276,7 +278,7 @@ sub image_sort
 {
   my ( @images ) = @_;
 
-  return sort { $a <=> $b } @images;
+  return sort { $a cmp $b } @images;
 }
 
 sub get_caption
