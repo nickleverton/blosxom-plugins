@@ -8,7 +8,7 @@ package timezone;
 # --- Configurable variables -----
 
 # what timezone is the blog author in
-my $blog_timezone = "EST5EDT";
+my $blog_timezone = "GMT0BST";
 
 # --------------------------------
 
