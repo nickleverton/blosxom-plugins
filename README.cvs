@@ -1,0 +1,20 @@
+The 'general' directory contains plugins that are not currently
+author-maintained. General plugins can be updated by anyone, though
+preferably after discussing the changes on the blosxom-devel list.
+
+All other directories are author-directories, for authors 
+maintaining their own plugins here. Author plugins should generally
+only be updated by their owners, so please direct patches and bug 
+reports on them directly to the person concerned (or to blosxom-devel 
+if you cannot find the author's contact details).
+
+The blosxom-devel list is at blosxom-devel@lists.sourceforge.net.
+
+
+Plugin authors: it would be helpful if you could create a README in
+your directory with your contact details, especially if they are not
+included in your plugins. You may wish to obfuscate email addresses
+though, since these will be available on the web via the cvs web
+interface.
+
+
