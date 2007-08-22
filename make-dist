@@ -1,0 +1,41 @@
+#!/bin/sh
+#
+# Quick script to make a flattened tarball (unix)
+#
+
+die() {
+  echo $*
+  exit 1
+}
+
+cd `dirname $0`
+
+NAME=blosxom-plugins
+VERSION=`cat VERSION`
+
+test -d $NAME-$VERSION && rm -rf $NAME-$VERSION
+mkdir $NAME-$VERSION
+
+find * \( -name $NAME-$VERSION -o -name CVS \) -prune -o -type f -exec cp -p {} $NAME-$VERSION \;
+
+# Prune unwanted files
+for i in make-dist README.cvs; do
+  rm -f $NAME-$VERSION/$i
+done
+
+# Create tarball
+which tar >/dev/null 2>&1
+if [ $? == 0 ]; then
+  echo "Creating $NAME-$VERSION.tar.gz"
+  tar -zcf $NAME-$VERSION.tar.gz $NAME-$VERSION
+fi
+
+# Create zip file
+which zip >/dev/null 2>&1
+if [ $? == 0 ]; then
+  echo "Creating $NAME-$VERSION.zip"
+  zip -q -r $NAME-$VERSION.zip $NAME-$VERSION 
+fi
+
+test -d $NAME-$VERSION && rm -rf $NAME-$VERSION
+
