@@ -1,6 +1,9 @@
 # Blosxom Plugin: whoami
 # Author(s): Rael Dornfest <rael@oreilly.com> 
-# Version: 2.0b4-5
+#  Modified: Gerfried Fuchs <alfie@ist.org>
+#      Allows ?user=$whoami::username links to just request that user's entries
+#      $whoami::fullname is stripped off the GECOS stuff
+# Version: 2.0b4-5.1
 # Documentation: See the bottom of this file or type: perldoc whoami
 
 package whoami;
@@ -12,7 +15,8 @@ package whoami;
 $fullname;
 $username;
 
-use File::stat;
+use File::stat qw();
+use CGI qw(param);
 
 sub start {
   1;
@@ -24,11 +28,21 @@ sub story {
   $username = $fullname = '';
 
   if ( -e "$blosxom::datadir$path/$filename.$blosxom::file_extension" ) {
-    my @user_info = getpwuid( stat("$blosxom::datadir$path/$filename.$blosxom::file_extension")->uid );
-    ($username, $fullname) = ($user_info[0],$user_info[6]);
+    my @user_info = getpwuid( File::stat::stat("$blosxom::datadir$path/$filename.$blosxom::file_extension")->uid );
+    ($username, $fullname) = ($user_info[0],$user_info[6] =~ m/^([^,]*)/);
   };
 
   1;
+}
+
+sub filter {
+  my $self = shift;
+  my ($files, $others) = @_;
+  if (param('user')) {
+    foreach (keys %$files) {
+      delete $files->{$_} if getpwuid((stat($_))[4]) ne param('user');
+      }
+  }
 }
 
 1;
@@ -43,7 +57,9 @@ Blosxom Plug-in: whoami
 
 Populates $whoami::username and $whoami::$fullname with 
 local username and full name, respectively, for each story.  Useful
-for group Blosxom blogs.
+for group Blosxom blogs. You can also request just the blog entries
+of a specific username by linking things like
+$url?user=$whoami::username.
 
 =head1 VERSION
 
