@@ -3,11 +3,6 @@
 # Quick script to make a flattened tarball (unix)
 #
 
-die() {
-  echo $*
-  exit 1
-}
-
 cd `dirname $0`
 
 NAME=blosxom-plugins
