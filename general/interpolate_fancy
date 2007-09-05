@@ -1,6 +1,7 @@
 # Blosxom Plugin: interpolate_fancy
-# Author(s): Rael Dornfest <rael@oreilly.com> 
-# Version: 2003-09-09:12:10
+# Author: Rael Dornfest <rael@oreilly.com>, 
+# Modified by: Matthijs Kooijman <m.kooijman@student.utwente.nl>
+# Version: 2006-01-14
 # Documentation: See the bottom of this file or type: 
 # perldoc interpolate_fancy
 
@@ -14,13 +15,81 @@ package interpolate_fancy;
 # there's a chance of some tomfoolery, exposing variables and calling
 # actions/subroutines you might not want called.
 # 0 = No (default),  1 = Yes
-my $recurse_into_story = 0;
+our $recurse_into_story = 0;
 
 # --------------------------------
 
 sub start {
   1;
 }
+
+
+# (Recursively) resolve conditinal includes <?...>...</?>.
+# Expects two arguments: The (part of the) template we are expanding and
+# wether or not this part will be displayed. When this last argument is false,
+# this part of the template will not be displayed, but is still parsed to
+# properly resolve nested conditions.
+#
+# This will resolve and substitute all conditionals on the "current level".
+# This effectively means, the routine will search for and resolve all tags it
+# finds (with proper nesting), until it finds a closing tag (</?>) for which
+# it has not seen the opening tag, or there are no more opening tags in the
+# file.
+# 
+# This function will return the template with all conditionals on the current
+# level resolved. This will guarantee that if there are any opening or closing
+# tags left in the template, the first one will be a closing tag (which can
+# then be resolved in the upper level).
+sub _resolve_nested {
+    my $template = shift;
+    my $display  = shift;
+  
+    while (1) {
+        if ($template !~ /(.*?)<\?(\!?\$\w+(?:::)?\w*)(?:\s+?(.+?))?>(.*)/s) {
+            return $template; # No open tags, normal text
+        }
+       
+        my $head = $1;
+        my $var  = $2;
+        my $attr = $3;
+        my $tail = $4;
+
+        if ($head =~ /<\/\?>/s) {
+            return $template; # There is a closing tag before the first open tag,
+                             # we're done. 
+        }
+        
+        $displayitem = $display;
+        if ($displayitem) { # Don't care about these tests if we're not displayed anyway.
+            my $negated = ($var =~ s/^\!//); # Remove negation mark
+            if ($negated || !$attr) {
+                if ($attr) {
+                    warn("<?!$var $attr>: Negated expression can't have attributes, ignoring them.");
+                }
+                $displayitem = eval("defined $var");
+                if ($negated) { $displayitem = !$displayitem; }
+            } else {
+                $displayitem = _test(eval($var), $attr);
+            }
+        }
+
+
+        $tail = _resolve_nested($tail, $displayitem);
+
+        if ($tail !~ /<\/\?>/s) { # Is there no closing tag?
+            warn("Invalid nesting: <?$var $attr> missing closing tag.");
+        }
+        if ($displayitem)
+        {
+            $tail =~ s/<\/\?>//s; # Remove the closing tag
+        } else {
+            $tail =~ s/.*?<\/\?>//s; # Remove up to the closing tag
+        }
+        $template = $head . $tail;
+    }
+    return $template;
+}
+
 
 sub interpolate {
   return sub {
@@ -39,24 +108,21 @@ sub interpolate {
     # Backward Compatibility with core Blosxom style interpolation
     $template =~ s#(?<!<)(?<!<\?)(?<!<\?!)(\$\w+(?:::)?\w*)#<$1 />#gs; 
 
-    # Defined
-    # e.g. <?$var>display if defined</?>
-    $template =~ s#<\?(\$\w+(?:::)?\w*)>(.*?)<\/\?>#"defined $1 ? \$2 : undef"#gsee;
+    #
+    # Conditional inclusion
+    #
+    # e.g. <?$path>stuff</?>
+    $template = interpolate_fancy::_resolve_nested($template, 1);
 
-    # Undefined 
-    # e.g. <?!$var>display if not defined</?>
-    $template =~ s#<\?!(\$\w+(?:::)?\w*)>(.*?)<\/\?>#"!defined $1 ? \$2 : undef"#gsee;
-
-    # Tests 
-    # eq (eq), ne (ne), lt (<), gt (>), like (=~), unlike (!~)
-    # e.g. <?$var lt="123">display if $var less than 123</?>
-    $template =~ s#<\?(\$\w+(?:::)?\w*)\s+?(.+?)>(.*?)<\/\?>#"interpolate_fancy::_test(qq{$1}, q{$2}, q{$3})"#gsee;
-
-    # Unconditional, Recursive 
+    #
+    # Variable expansion
+    #
     # e.g. <$var />
     while( $template =~ s/<\$([a-zA-Z?]\w+(?:::)?\w*)\s+?\/>/"defined \$$1 ? \$$1 : undef"/gsee ) { }
 
+    #
     # Actions 
+    #
     # e.g. <@plugin.subroutine arg1="a" output="no" />
     # e.g. <@plugin.subroutine encoding="Latin1" output="yes">pass content</@> 
     $template =~ s#<\@(\w+?)\.(\w+?)\s+?(.+?)?(?:>(.*?)<\/\@\1\.\2>|\s+?\/>)#&interpolate_fancy::_action($1,$2,$3,$4)#gse;
@@ -73,20 +139,17 @@ sub interpolate {
 }
 
 sub _test {
-  my($variable, $attr, $content) = @_;
-
-  my $result;
-
+  my($variable, $attr) = @_;
   my $attributes = interpolate_fancy::_attributes($attr);
 
-  defined $attributes->{eq} and return $variable eq $attributes->{eq} ? $content : undef;
-  defined $attributes->{ne} and return $variable ne $attributes->{ne} ? $content : undef;
-  defined $attributes->{gt} and return $variable > $attributes->{gt} ? $content : undef;
-  defined $attributes->{lt} and return $variable < $attributes->{lt} ? $content : undef;
-  defined $attributes->{like} and return $variable  =~ /$attributes->{like}/ ? $content : undef;
-  defined $attributes->{unlike} and return $variable  !~ /$attributes->{unlike}/ ? $content : undef;
+  defined $attributes->{eq} and return $variable eq $attributes->{eq};
+  defined $attributes->{ne} and return $variable ne $attributes->{ne};
+  defined $attributes->{gt} and return $variable > $attributes->{gt};
+  defined $attributes->{lt} and return $variable < $attributes->{lt};
+  defined $attributes->{like} and return $variable  =~ /$attributes->{like}/;
+  defined $attributes->{unlike} and return $variable  !~ /$attributes->{unlike}/;
 
-  return undef;
+  return 0;
 }
 
 sub _action {
@@ -133,7 +196,9 @@ conditionally or unconditionally:
 Perform actions (i.e. call plug-in subroutines) at any point in your page, 
 whether to act on current content and return results or no.
 
-=head2 Includes
+=head2 Variable expansion
+  This syntax will expand to the value of the referenced variable and can be
+  used to include dynamic content in your pages.
 
   * Unconditionally and recursively
 
@@ -152,6 +217,18 @@ whether to act on current content and return results or no.
 
     Limited by the $recurse_into_story configuration directive (see
     the CONFIGURATION below).
+
+==head2 Conditional inclusion
+  These tags will each have a certain condition attached to them, depending on
+  what syntax is used exactly. All text between the opening and closing tags
+  will only be included in the final output of the page if the given condition
+  is true, it will be discarded otherwise.
+
+  Note that as of 2006-01-11 conditional tags can be nested, which effectively
+  allows you to specify the logical and of two (or more) conditions. There is
+  no way yet to specify the logical or, though. If you're using nested
+  conditions and they won't work properly, check your error log, since the
+  plugin puts warnings about incorrect nestings there.
 
   * The template variable has a value (i.e. is defined)
 
@@ -332,15 +409,16 @@ requiring no template rewriting on your part.
 If you've been using the interpolate_conditional plugin,
 the conditional bits won't be respected by default.  You should
 run your templates through the interpolate2fancy utility
-[http://blosxom.sourceforge.net/downloads/utilities/interpolate2fancy.py].
+[http://www.blosxom.com/downloads/utilities/interpolate2fancy.py].
 
 =head1 VERSION
 
-2003-09-09:12:10
+2006-01-11
 
 =head1 AUTHOR
 
 Rael Dornfest  <rael@oreilly.com>, http://www.raelity.org/
+Modified by Matthijs Kooijman <m.kooijman@student.utwente.nl>, http://katherina.student.utwente.nl/~matthijs/blog
 
 =head1 SEE ALSO
 
