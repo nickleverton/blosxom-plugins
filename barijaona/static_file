@@ -1,14 +1,14 @@
 # Blosxom Plugin: static_file
-# Author(s): Barijaona Ramaholimihaso <static_file@barijaona.com>
+# Author(s): Barijaona Ramaholimihaso <blosxom@barijaona.com>
 # original idea by Raffi Krikorian <r@bitwaste.com> (binary plugin)
-# Version: 2004-09-19
+# Version: 2007-09-08
 # Documentation: See the bottom of this file or type: perldoc static_file
 
 package static_file;
+use strict;
 use lib qq{$blosxom::plugin_dir/lib};
 use CGI qw/:standard :netscape/;
 use File::Copy;
-use File::Cat;
 use File::Find;
 use File::Path;
 use FileHandle;
@@ -16,16 +16,16 @@ use MIME::Types;
 
 
 # --- Configuration Variables ---
-
+use vars qw( @exclude_extensions_dynamic @exclude_extensions_static $default_type );
 # You may want to hide from the public some kind of files,
 # for instance the files Blosxom renders, generally .txt files.
 # Files whose filename extension is in the following list
 # will be ignored in dynamic rendering 
-@exclude_extensions_dynamic = ();
+@exclude_extensions_dynamic = qw( ) unless scalar(@exclude_extensions_dynamic);
 
 # Files whose filename extension is in the following list
 # will be ignored in static rendering
-@exclude_extensions_static = ("$blosxom::file_extension", txt_); 
+@exclude_extensions_static = qw("$blosxom::file_extension" txt_) unless scalar(@exclude_extensions_dynamic); 
 
 # This is the MIME type that will be used if nothing else
 # can be found. If your server contains mostly text or HTML
@@ -33,46 +33,55 @@ use MIME::Types;
 # content is binary, such as applications or images, you may
 # want to use "application/octet-stream" instead to keep browsers
 # from trying to display binary files as though they are text.
-$default_type="text/plain";
+$default_type="text/plain" unless defined $default_type;
 
 # --------------------------------
 
 sub start {
-    1;
+    return 1;
 }
 
 sub skip {
-    if( $blosxom::static_or_dynamic eq "dynamic" ) {
+	if( $blosxom::static_or_dynamic eq "dynamic" ) {
 	# if Blosxom is being dynamically generated -- then we have to
 	# see if the URL requested specifies a file that is on the
 	# filesystem, then it will return that file with the right
 	# Content-Type header
- 	if( ( $blosxom::path_info =~ m!^(.*?/?)([^/]*?\.?)([^\.]*?)$! ) &&
-	  ( -e "$blosxom::datadir/$1$2$3" ) && (! -d "$blosxom::datadir/$1$2$3" ) ) 
-	    {
-	    # access path and name, name and extension of the file
-	    $fileaccess = "$blosxom::datadir/$1$2$3" ;
-	    # adequate file extension ?
-	    if ( grep(/$3/, @exclude_extensions_dynamic) ) {return 0 ;}
-	    my MIME::Types $types = MIME::Types->new;
-	    my MIME::Type $mimetype = $types->mimeTypeOf($blosxom::flavour);
-	    $blosxom::header = 
+	if ( ($blosxom::path_info =~ m!^(.*?/?)([^/]*?\.?)([^\.]*?)$!) &&
+	($blosxom::others{"$blosxom::datadir/$1$2$3"} || $blosxom::files{"$blosxom::datadir/$1$2$3"}) )
+		{
+		# access path and name, name and extension of the file
+		my $fileaccess = "$blosxom::datadir/$1$2$3" ;
+		# adequate file extension ?
+		if ( grep(/$3/, @exclude_extensions_dynamic) ) {return 0 ;}
+		my MIME::Types $types = MIME::Types->new;
+		my MIME::Type $mimetype = $types->mimeTypeOf($blosxom::flavour);
+		$blosxom::header = 
 		header( { -type=>
-			      ( $mimetype ) ? 
-			      $mimetype->mediaType . "/" . $mimetype->subType :
-			      $default_type } );
+				  ( $mimetype ) ? 
+				  $mimetype->mediaType . "/" . $mimetype->subType :
+				  $default_type } );
 		my @data = stat( $fileaccess );
 		# forge some HTTP header stuff
 		print("Accept-Ranges: bytes\nContent-Length: $data[7]\n$blosxom::header");
-		cat( $fileaccess, \*STDOUT);
+#		one could use cat from File::Cat but apparently it causes problem with big binaries files
+		open( FILE, $fileaccess );
+		binmode FILE;
+		my $buffer;
+		while (my $num_bytes_read = read( FILE, $buffer, 65536 ))
+		{
+			print STDOUT $buffer ;
+		}
+		close(FILE);
+
 		# empty what blosxom main script may use
-	    $blosxom::header= "";
+		$blosxom::header= "";
 		$blosxom::output='';
 		# tell blosxom main script to end processing for this file
-	    return 1;
-	    }
+		return 1;
+		}
 		return 0 ;
-    }
+	}
 	return 0;
 }
 
@@ -102,9 +111,9 @@ sub end {
 			}
 		}, $blosxom::datadir );
 
-    }
+	}
 
-    1;
+	return 1;
 
 }
 
@@ -128,9 +137,19 @@ Another convinience of this is that when you wish to include an image or anythin
 
 =head1 VERSION
 
-2004-09-19
+2007-08-09
 
 Version number is the date on which this version of the plug-in was created.
+
+=head2 CHANGES
+
+2007-08-09 :
+- replaced File::Cat with a routine submitted by stephen2eq ;
+- checks the presence of the file directly in %blosxom::files and %blosxom::others
+- use strict ; programming style more compliant with some evolution ideas for blosxom
+
+2004-09-19 :
+- the default MIME type is configurable
 
 =head1 AUTHOR
 
@@ -153,7 +172,7 @@ It is recommanded, for performance optimization, to put a number in front of the
 =head1 LICENSE
 
 static_file Blosxom plugin
-Copyright 2003, Barijaona Ramaholimihaso
+Copyright 2003-2007, Barijaona Ramaholimihaso
 Copyright 2003, Raffi Krikorian
 
 Permission is hereby granted, free of charge, to any person obtaining a
