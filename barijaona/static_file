@@ -1,7 +1,7 @@
 # Blosxom Plugin: static_file
 # Author(s): Barijaona Ramaholimihaso <blosxom@barijaona.com>
 # original idea by Raffi Krikorian <r@bitwaste.com> (binary plugin)
-# Version: 2007-09-08
+# Version: 2007-09-09
 # Documentation: See the bottom of this file or type: perldoc static_file
 
 package static_file;
@@ -21,11 +21,11 @@ use vars qw( @exclude_extensions_dynamic @exclude_extensions_static $default_typ
 # for instance the files Blosxom renders, generally .txt files.
 # Files whose filename extension is in the following list
 # will be ignored in dynamic rendering 
-@exclude_extensions_dynamic = qw( ) unless scalar(@exclude_extensions_dynamic);
+@exclude_extensions_dynamic = qw(txt_ ) unless scalar(@exclude_extensions_dynamic);
 
 # Files whose filename extension is in the following list
 # will be ignored in static rendering
-@exclude_extensions_static = qw("$blosxom::file_extension" txt_) unless scalar(@exclude_extensions_dynamic); 
+@exclude_extensions_static = qw(txt txt_) unless scalar(@exclude_extensions_dynamic); 
 
 # This is the MIME type that will be used if nothing else
 # can be found. If your server contains mostly text or HTML
@@ -38,7 +38,7 @@ $default_type="text/plain" unless defined $default_type;
 # --------------------------------
 
 sub start {
-    return 1;
+	return 1;
 }
 
 sub skip {
@@ -53,7 +53,7 @@ sub skip {
 		# access path and name, name and extension of the file
 		my $fileaccess = "$blosxom::datadir/$1$2$3" ;
 		# adequate file extension ?
-		if ( grep(/$3/, @exclude_extensions_dynamic) ) {return 0 ;}
+		if ( grep(/^$3$/, @exclude_extensions_dynamic) ) {return 0 ;}
 		my MIME::Types $types = MIME::Types->new;
 		my MIME::Type $mimetype = $types->mimeTypeOf($blosxom::flavour);
 		$blosxom::header = 
@@ -137,13 +137,16 @@ Another convinience of this is that when you wish to include an image or anythin
 
 =head1 VERSION
 
-2007-08-09
+2007-09-09
 
 Version number is the date on which this version of the plug-in was created.
 
 =head2 CHANGES
 
-2007-08-09 :
+2007-09-09 :
+- Bugfix : change how we check if we should serve the required extension (checks the complete extension, forgot that qw does not interpolate)
+
+2007-09-08 :
 - replaced File::Cat with a routine submitted by stephen2eq ;
 - checks the presence of the file directly in %blosxom::files and %blosxom::others
 - use strict ; programming style more compliant with some evolution ideas for blosxom
