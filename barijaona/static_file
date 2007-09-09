@@ -25,7 +25,7 @@ use vars qw( @exclude_extensions_dynamic @exclude_extensions_static $default_typ
 
 # Files whose filename extension is in the following list
 # will be ignored in static rendering
-@exclude_extensions_static = qw(txt txt_) unless scalar(@exclude_extensions_dynamic); 
+@exclude_extensions_static = qw(txt txt_) unless scalar(@exclude_extensions_static); 
 
 # This is the MIME type that will be used if nothing else
 # can be found. If your server contains mostly text or HTML
@@ -99,7 +99,7 @@ sub end {
 					&&  (-d $File::Find::name) ) {
 						mkpath ("$blosxom::static_dir$1$2$3");}
 				# is it a file to be updated ?
-				elsif ( ! grep(/$3/, @exclude_extensions_static) )	{
+				elsif ( ! grep(/^$3$/, @exclude_extensions_static) )	{
 					my @static = stat( "$blosxom::static_dir$1$2$3" ); 
 					my @data = stat( $File::Find::name );
 					( ( ! -e "$blosxom::static_dir$1$2$3" ) ||
