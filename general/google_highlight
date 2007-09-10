@@ -1,11 +1,8 @@
 # Blosxom Plugin: google_highlight
-
-Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
-
-Blosxom Plugin Docs: http://blosxom.sourceforge.net/documentation/users/plugins.html
 # Author(s): Rael Dornfest <rael@oreilly.com> 
 # Version: 2003-09-09
 # Documentation: See the bottom of this file or type: perldoc google_highlight
+# Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 
 package google_highlight;
 

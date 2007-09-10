@@ -9,7 +9,7 @@ package kwiki;
 
 # --------------------------------
 
-use 'CGI::Kwiki::Formatter';
+use CGI::Kwiki::Formatter;
 
 sub start {
   return $meta::markup eq 'kwiki' ? 1 : 0;
