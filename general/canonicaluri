@@ -142,6 +142,9 @@ respect to index.* component, trailing slash, or flavour extension.
 
 Frank Hecker <hecker@hecker.org>, http://www.hecker.org/
 
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
+
 =head1 DESCRIPTION
 
 This plugin checks to see whether the requested URI is in the
@@ -225,9 +228,9 @@ any trailing slash on the end of the URI and pass it on to Blosxom.
 
 =head1 SEE ALSO
 
-Blosxom Home/Docs/Licensing: http://www.blosxom.com/
+Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 
-Blosxom Plugin Docs: http://www.blosxom.com/documentation/users/plugins.html
+Blosxom Plugin Docs: http://blosxom.sourceforge.net/documentation/users/plugins.html
 
 =head1 BUGS
 
@@ -238,8 +241,8 @@ because it depends on the C<path_info()> function to get the URI path,
 and the C<path_info()> value has already been stripped of any excess
 trailing slashes that might have been present in the original URI.
 
-Please address other bug reports and comments to the Blosxom mailing list:
-http://www.yahoogroups.com/group/blosxom
+Please send bug reports and feedback to the Blosxom development mailing 
+list <blosxom-devel@lists.sourceforge.net>.
 
 =head1 LICENSE
 

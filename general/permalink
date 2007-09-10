@@ -203,6 +203,9 @@ Generate permalinks
 
 Mark Ivey <zovirl1@zovirl.com>, http://zovirl.com
 
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
+
 =head1 DESCRIPTION
 
 This plugin generates permalinks to help make it easier to use a consistent
@@ -218,9 +221,9 @@ is used as flavor.
 
 =head1 SEE ALSO
 
-Blosxom Home/Docs/Licensing: http://www.raelity.org/apps/blosxom/
+Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 
-Blosxom Plugin Docs: http://www.raelity.org/apps/blosxom/plugin.shtml
+Blosxom Plugin Docs: http://blosxom.sourceforge.net/documentation/users/plugins.html
 
 =head1 BUGS
 
@@ -229,8 +232,8 @@ This might be a problem if your $blosxom::datadir isn't publically available
 (by being under the web-server's document root, by using the static_file plugin,
 etc.)
 
-Address bug reports and comments to the Blosxom mailing list 
-[http://www.yahoogroups.com/group/blosxom].
+None known; please send bug reports and feedback to the Blosxom
+development mailing list <blosxom-devel@lists.sourceforge.net>.
 
 =head1 LICENSE
 

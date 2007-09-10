@@ -154,6 +154,9 @@ http://www.w3.org/Provider/Style/URI.html for motivation.
 
 Mark Ivey <zovirl@zovirl.com>, http://zovirl.com
 
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
+
 =head1 DESCRIPTION
 
 Make Blosxom recognize date-based, extensionless URIs for everything (both
@@ -192,9 +195,9 @@ the default flavor will be used.
 
 =head1 SEE ALSO
 
-Blosxom Home/Docs/Licensing: http://www.raelity.org/apps/blosxom/
+Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 
-Blosxom Plugin Docs: http://www.raelity.org/apps/blosxom/plugin.shtml
+Blosxom Plugin Docs: http://blosxom.sourceforge.net/documentation/users/plugins.html
 
 =head2 If you use cooluri2, some of these other plugins might come in handy:
 
@@ -219,8 +222,8 @@ binaries, etc.).
 
 =head1 BUGS
 
-Address bug reports and comments to the Blosxom mailing list 
-[http://www.yahoogroups.com/group/blosxom].
+None known; please send bug reports and feedback to the Blosxom
+development mailing list <blosxom-devel@lists.sourceforge.net>.
 
 =head1 LICENSE
 

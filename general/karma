@@ -297,6 +297,9 @@ Also, it uses the filter routine.  Therefore, it will interact with any other pl
 Fletcher T. Penney - http://fletcher.freeshell.org
 Concept by Beau Lebens
 
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
+
 =head1 LICENSE
 
 This source is submitted to the public domain.  Feel free to use and modify it.  If you like, a comment in your modified source attributing credit to myself and Beau Lebens would be appreciated.

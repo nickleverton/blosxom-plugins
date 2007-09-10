@@ -172,9 +172,17 @@ to locate posts with comments written in the last 5 days.  You can also create l
 
 You are also welcome to change the $switch_word variable to whatever you like to fit your site.
 
-=head1 AUTHORS
+=head1 BUGS
+
+None known; please send bug reports and feedback to the Blosxom
+development mailing list <blosxom-devel@lists.sourceforge.net>.
+
+=head1 AUTHOR
 
 Fletcher T. Penney - http://fletcher.freeshell.org
+
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
 
 =head1 LICENSE
 

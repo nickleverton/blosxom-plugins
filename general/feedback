@@ -1777,18 +1777,21 @@ based on and inspired by the original writeback plug-in by Rael
 Dornfest together with modifications made by Fletcher T. Penney, Doug
 Alcorn, Kevin Scaldeferri, and others.
 
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
+
 =head1 SEE ALSO
 
 More on the feedback plug-in: http://www.hecker.org/blosxom/feedback
 
-Blosxom Home/Docs/Licensing: http://www.blosxom.com/
+Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 
-Blosxom Plug-in Docs: http://www.blosxom.com/plugin.shtml
+Blosxom Plugin Docs: http://blosxom.sourceforge.net/documentation/users/plugins.html
 
 =head1 BUGS
 
-Address bug reports and comments to the Blosxom mailing list
-[http://www.yahoogroups.com/group/blosxom].
+None known; please send bug reports and feedback to the Blosxom
+development mailing list <blosxom-devel@lists.sourceforge.net>.
 
 =head1 LICENSE
 

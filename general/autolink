@@ -56,17 +56,31 @@ Blosxom Plug-in: autolink
 
 =head1 DESCRIPTION
 
-Allows you to create a list of keywords that are automatically converted to a url whenever they are used in a story.  You can insert "<!-- noautolink -->" in a story to prevent any changes
+Allows you to create a list of keywords that are automatically converted to a
+url whenever they are used in a story.  You can insert "<!-- noautolink -->"
+in a story to prevent any changes
 
-You can set your own location for the autolinks data file, but by default it lives in your data directory.
+You can set your own location for the autolinks data file, but by default it
+lives in your data directory.
+
+=head1 BUGS
+
+None known; please send bug reports and feedback to the Blosxom
+development mailing list <blosxom-devel@lists.sourceforge.net>.
 
 =head1 AUTHOR
 
 Fletcher T. Penney - http://fletcher.freeshell.org
 
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
 
 =head1 LICENSE
 
-This source is submitted to the public domain.  Feel free to use and modify it.  If you like, a comment in your modified source attributing credit to myself and Gregory Bair for his original work would be appreciated.
+This source is submitted to the public domain.  Feel free to use and modify
+it.  If you like, a comment in your modified source attributing credit to
+myself and Gregory Bair for his original work would be appreciated.
 
-THIS SOFTWARE IS PROVIDED AS IS AND WITHOUT ANY WARRANTY OF ANY KIND.  USE AT YOUR OWN RISK!
+THIS SOFTWARE IS PROVIDED AS IS AND WITHOUT ANY WARRANTY OF ANY KIND.  USE AT
+YOUR OWN RISK!
+

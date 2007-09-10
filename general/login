@@ -290,9 +290,17 @@ Also, this plugin does not pretend to offer serious security.  Someone could rea
 
 There are many issues to consider when securing a web site, and I don't pretend to address them all, nor do I guarantee that this plugin even works properly.  It is simply a means to provide some form of control without much effort on your part.  You get what you pay for.  But I will continue to work with the community to improve it as security holes are noted.
 
+=head1 BUGS
+
+None known; please send bug reports and feedback to the Blosxom
+development mailing list <blosxom-devel@lists.sourceforge.net>.
+
 =head1 AUTHOR
 
 Fletcher T. Penney - http://fletcher.freeshell.org
+
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
 
 
 =head1 LICENSE

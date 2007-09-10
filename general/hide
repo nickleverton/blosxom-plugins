@@ -60,12 +60,6 @@ Purpose: Allows you to hide stories and categories from view while browsing, but
 
 0.1
 
-=head1 AUTHOR
-
-Fletcher T. Penney
-http://fletcher.freeshell.org
-
-
 =head1 CONFIGURATION
 
 C<$ign_file> name to use for hide files. Defaults to
@@ -79,6 +73,18 @@ apps/
 life/about.txt
 
 One entry per line. You should be able to use regexes.  Works just like exclude in this regard.
+
+=head1 BUGS
+
+None known; please send bug reports and feedback to the Blosxom
+development mailing list <blosxom-devel@lists.sourceforge.net>.
+
+=head1 AUTHOR
+
+Fletcher T. Penney, http://fletcher.freeshell.org
+
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
 
 =head1 LICENSE
 

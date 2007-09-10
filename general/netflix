@@ -1,7 +1,7 @@
 # Blosxom Plugin: netflix
 # Author: Todd Larason (jtl@molehill.org)
 # Version: 0+1i
-# Blosxom Home/Docs/Licensing: http://www.raelity.org/blosxom
+# Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 # Netflix plugin Home/Docs/Licensing:
 #   http://molelog.molehill.org/blox/Computers/Internet/Web/Blosxom/Netflix/
 package netflix;
@@ -179,15 +179,6 @@ Purpose: Lets you easily share your Netflix queue information
 
 1st test release
 
-=head1 AUTHOR
-
-Todd Larason  <jtl@molehill.org>, http://molelog.molehill.org/
-
-=head1 BUGS
-
-None known; address bug reports and comments to me or to the Blosxom
-mailing list [http://www.yahoogroups.com/groups.blosxom].
-
 =head1 Customization
 
 =head2 Configuration variables
@@ -229,6 +220,18 @@ section in the plugin.
 Because fetching the queue information is relatively slow, I don't believe
 anyone would want to use it without caching.  Thus, this module requires
 Storable, and caching is always on.
+
+=head1 BUGS
+
+None known; please send bug reports and feedback to the Blosxom
+development mailing list <blosxom-devel@lists.sourceforge.net>.
+
+=head1 AUTHOR
+
+Todd Larason  <jtl@molehill.org>, http://molelog.molehill.org/
+
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
 
 =head1 LICENSE
 

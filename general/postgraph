@@ -1,7 +1,7 @@
 # Blosxom Plugin: postgraph					   -*- perl -*-
 # Author: Todd Larason jtl@molehill.org and Nilesh Chaudhari http://nilesh.org/
 # Version: 0+1i
-# Blosxom Home/Docs/Licensing: http://www.raelity.org/blosxom
+# Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 # Categories plugin Home/Docs/Licensing:
 #   http://molelog.molehill.org/blox/Computers/Internet/Web/Blosxom/Graph/
 # parts Copyright (c) 2002 Nilesh Chaudhari http://nilesh.org/
@@ -257,10 +257,13 @@ portions (the "BLOGTIMES" chart style) based on code by Nilesh Chaudhari;
 see http://nilesh.org/mt/blogtimes/.  Nilesh gets credit, but direct bugs
 to Todd Larason.
 
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
+
 =head1 BUGS
 
-None known; address bug reports and comments to me or to the Blosxom
-mailing list [http://www.yahoogroups.com/groups.blosxom].
+None known; please send bug reports and feedback to the Blosxom
+development mailing list <blosxom-devel@lists.sourceforge.net>.
 
 =head1 Customization
 

@@ -6,8 +6,7 @@
 #            Upgrade to Atom 1.0 spec: Sam Pearson
 # Version: 2005-08-04
 # Docs: Included below: type "perldoc atomfeed", or scroll down
-# Blosxom Home/Docs/Licensing: http://www.raelity.org/apps/blosxom/
-# Blosxom Plugin Docs: http://www.raelity.org/apps/blosxom/plugin.shtml
+# Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 
 package atomfeed;
 
@@ -451,6 +450,9 @@ enclosures plugin originally written by:
 Dave Slusher, http://www.evilgeniuschronicles.org/wordpress/ and Keith
 Irwin,  http://www.asyserver.com/~kirwin/.
 
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
+
 =head1 QUICKSTART INSTALLATION
 
 To get an Atom feed up and running in a jiffy, you need only set the
@@ -705,11 +707,9 @@ browser for it to work as intended.
 
 =head1 SEE ALSO
 
-Blosxom Home/Docs/Licensing:
-http://www.raelity.org/apps/blosxom/
+Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 
-Blosxom Plugin Docs:
-http://www.raelity.org/apps/blosxom/plugin.shtml
+Blosxom Plugin Docs: http://blosxom.sourceforge.net/documentation/users/plugins.html
 
 1.0 Update Release Notes:
 http://sgp.me.uk/sam/2005/08/04/atom-for-blosxom
@@ -719,8 +719,8 @@ http://atompub.org/2005/07/11/draft-ietf-atompub-format-10.html
 
 =head1 BUGS
 
-Address bug reports and comments to the Blosxom mailing list:
-http://www.yahoogroups.com/group/blosxom
+None known; please send bug reports and feedback to the Blosxom
+development mailing list <blosxom-devel@lists.sourceforge.net>.
 
 =head1 LICENSE
 

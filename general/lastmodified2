@@ -585,13 +585,18 @@ by renaming it to, e.g., 99lastmodified2.
 
 =head1 SEE ALSO
 
-Blosxom Home/Docs/Licensing: http://www.blosxom.com/
+Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 
-Blosxom Plugin Docs: http://www.blosxom.com/documentation/users/plugins.html
+Blosxom Plugin Docs: http://blosxom.sourceforge.net/documentation/users/plugins.html
 
 lastmodified plugin: http://www.cobblers.net/blog/dev/blosxom/
 
 more on the lastmodified2 plugin: http://www.hecker.org/blosxom/lastmodified2
+
+=head1 BUGS
+
+None known; please send bug reports and feedback to the Blosxom
+development mailing list <blosxom-devel@lists.sourceforge.net>.
 
 =head1 AUTHOR
 
@@ -599,6 +604,9 @@ Frank Hecker <hecker@hecker.org> http://www.hecker.org/
 
 Based on the original lastmodified plugin by Bob Schumaker
 <cobblers@pobox.com> http://www.cobblers.net/blog
+
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
 
 =head1 LICENSE
 

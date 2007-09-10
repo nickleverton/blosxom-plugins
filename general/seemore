@@ -1,7 +1,7 @@
 # Blosxom Plugin: seemore                                          -*- perl -*-
 # Author: Todd Larason (jtl@molehill.org)
 # Version: 0+3i
-# Blosxom Home/Docs/Licensing: http://www.raelity.org/blosxom
+# Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 # SeeMore plugin Home/Docs/Licensing:
 #   http://molelog.molehill.org/blox/Computers/Internet/Web/Blosxom/SeeMore/
 
@@ -102,10 +102,13 @@ Purpose: Allows for long or spoiler-y posts to be split, with a "See more..." li
 
 Todd Larason  <jtl@molehill.org>, http://molelog.molehill.org/
 
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
+
 =head1 BUGS
 
-None known; address bug reports and comments to me or to the Blosxom
-mailing list [http://www.yahoogroups.com/groups.blosxom].
+None known; please send bug reports and feedback to the Blosxom
+development mailing list <blosxom-devel@lists.sourceforge.net>.
 
 =head1 Customization
 

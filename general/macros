@@ -1,7 +1,7 @@
 # Blosxom Plugin: macros                                           -*- perl -*-
 # Author: Todd Larason (jtl@molehill.org)
 # Version: 0+1i
-# Blosxom Home/Docs/Licensing: http://www.raelity.org/blosxom
+# Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 # Calendar plugin Home/Docs/Licensing:
 #   http://molelog.molehill.org/blox/Computers/Internet/Web/Blosxom/Macros/
 # Modelled on Brad Choate's MT-Macros, but no code in common
@@ -334,10 +334,13 @@ Purpose: Generalized macro system modelled on MT-Macros
 
 Todd Larason  <jtl@molehill.org>, http://molelog.molehill.org/
 
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
+
 =head1 BUGS
 
-None known; address bug reports and comments to me or to the Blosxom
-mailing list [http://www.yahoogroups.com/groups.blosxom].
+None known; please send bug reports and feedback to the Blosxom
+development mailing list <blosxom-devel@lists.sourceforge.net>.
 
 =head1 Customization
 

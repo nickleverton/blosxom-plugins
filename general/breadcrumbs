@@ -81,16 +81,19 @@ current version was first bundled.
 
 Rael Dornfest  <rael@oreilly.com>, http://www.raelity.org/
 
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
+
 =head1 SEE ALSO
 
-Blosxom Home/Docs/Licensing: http://www.raelity.org/apps/blosxom/
+Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 
-Blosxom Plugin Docs: http://www.raelity.org/apps/blosxom/plugin.shtml
+Blosxom Plugin Docs: http://blosxom.sourceforge.net/documentation/users/plugins.html
 
 =head1 BUGS
 
-Address bug reports and comments to the Blosxom mailing list 
-[http://www.yahoogroups.com/group/blosxom].
+None known; please send bug reports and feedback to the Blosxom
+development mailing list <blosxom-devel@lists.sourceforge.net>.
 
 =head1 LICENSE
 

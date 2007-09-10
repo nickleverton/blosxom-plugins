@@ -88,6 +88,9 @@ entries. See http://www.w3.org/Provider/Style/URI for motivation.
 
 Frank Hecker <hecker@hecker.org>, http://www.hecker.org/
 
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
+
 =head1 DESCRIPTION
 
 This plugin allows Blosxom to recognize extensionless URIs for
@@ -212,9 +215,9 @@ beginning with digits.
 
 =head1 SEE ALSO
 
-Blosxom Home/Docs/Licensing: http://www.blosxom.com/
+Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 
-Blosxom Plugin Docs: http://www.blosxom.com/documentation/users/plugins.html
+Blosxom Plugin Docs: http://blosxom.sourceforge.net/documentation/users/plugins.html
 
 =head1 BUGS
 
@@ -253,8 +256,8 @@ entries in the standard manner, i.e., as text files in the file system
 within the Blosxom data directory. It will not work if you are using
 other plugins like svn-backend that use different storage mechanisms.
 
-Please address other bug reports and comments to the Blosxom mailing
-list: http://www.yahoogroups.com/group/blosxom
+Please send other bug reports and feedback to the Blosxom development 
+mailing list <blosxom-devel@lists.sourceforge.net>.
 
 =head1 LICENSE
 

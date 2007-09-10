@@ -102,9 +102,17 @@ Version 0.1
 
 0.1	- initial public release
 
+=head1 BUGS
+
+None known; please send bug reports and feedback to the Blosxom
+development mailing list <blosxom-devel@lists.sourceforge.net>.
+
 =head1 AUTHOR
 
 Fletcher T. Penney, http://fletcher.freeshell.org
+
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
 
 =head1 LICENSE
 

@@ -1,7 +1,7 @@
 # Blosxom Plugin: allconsuming					  -*- cperl -*-
 # Author: Todd Larason (jtl@molehill.org)
 # Version: 0+4i
-# Blosxom Home/Docs/Licensing: http://www.raelity.org/blosxom
+# Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 # Netflix plugin Home/Docs/Licensing:
 # http://molelog.molehill.org/blox/Computers/Internet/Web/Blosxom/AllConsuming/
 package allconsuming;
@@ -342,10 +342,13 @@ Purpose: Lets you easily share your AllConsuming information
 
 Todd Larason  <jtl@molehill.org>, http://molelog.molehill.org/
 
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
+
 =head1 BUGS
 
-None known; address bug reports and comments to me or to the Blosxom
-mailing list [http://www.yahoogroups.com/groups.blosxom].
+None known; please send bug reports and feedback to the Blosxom
+development mailing list <blosxom-devel@lists.sourceforge.net>.
 
 =head1 Customization
 

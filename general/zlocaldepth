@@ -48,9 +48,17 @@ This plugin restricts entries to those within the $zlocaldepth::localdepth varia
 BTW, the name starts with a z so that it will follow other plugins that affect 
 filters and abide by their settings.
 
+=head1 BUGS
+
+None known; please send bug reports and feedback to the Blosxom
+development mailing list <blosxom-devel@lists.sourceforge.net>.
+
 =head1 AUTHOR
 
 Fletcher T. Penney - http://fletcher.freeshell.org
+
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
 
 =head1 VERSION HISTORY
 

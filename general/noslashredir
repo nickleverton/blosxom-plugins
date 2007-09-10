@@ -86,6 +86,9 @@ slash.
 
 Frank Hecker <hecker@hecker.org>, http://www.hecker.org/
 
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
+
 =head1 DESCRIPTION
 
 This plugin checks to see if the requested URI corresponds to a
@@ -132,9 +135,9 @@ the URI and pass it on to Blosxom.
 
 =head1 SEE ALSO
 
-Blosxom Home/Docs/Licensing: http://www.blosxom.com/
+Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 
-Blosxom Plugin Docs: http://www.blosxom.com/documentation/users/plugins.html
+Blosxom Plugin Docs: http://blosxom.sourceforge.net/documentation/users/plugins.html
 
 =head1 BUGS
 
@@ -147,8 +150,8 @@ This is arguably incorrect, since (unlike URIs specifying only the
 year or only the year and month) such a URI is not analogous to a
 directory.
 
-Address other bug reports and comments to the Blosxom mailing list:
-http://www.yahoogroups.com/group/blosxom
+Please send bug reports and feedback to the Blosxom development 
+mailing list <blosxom-devel@lists.sourceforge.net>.
 
 =head1 LICENSE
 

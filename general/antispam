@@ -63,18 +63,22 @@ human readable string.  The idea is that some of the spambots can't read this.
 Though as this technique becomes more popular, I am sure that the spambots will 
 catch on.  But it can't hurt, right?
 
+=head1 TODO
 
-I would like to figure out how to get this work with Writebacks as well to hide 
-email address that are submitted, but haven't gotten around to it.  If someone 
-wants to modify the code and let me know, I can distribute the modified version 
-and give you credit.
+Figure out how to get this work with writebacks as well to hide email addresses 
+that are submitted. 
 
-Let me know of any bugs!!
+=head1 BUGS
+
+None known; please send bug reports and feedback to the Blosxom
+development mailing list <blosxom-devel@lists.sourceforge.net>.
 
 =head1 AUTHOR
 
 Fletcher T. Penney  http://fletcher.freeshell.org
 
+This plugin is now maintained by the Blosxom Sourceforge Team,
+<blosxom-devel@lists.sourceforge.net>.
 
 =head1 LICENSE
 
