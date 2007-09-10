@@ -1,6 +1,6 @@
 # Blosxom Plugin: mason_blocks
 # Author(s): Gavin Carr <gavin@openfusion.com.au>
-# Version: 0.001000
+# Version: 0.002000
 
 package mason_blocks;
 
@@ -101,7 +101,11 @@ sub munge_blocks {
     }
   }
 
+  # Join flavour lines and update $$flavour_ref
   $$flavour_ref = join "\n", @flavour;
+
+  # Support mason-style end-of-line newline escapes
+  $$flavour_ref =~ s/\\\r?\n//g;
 }
 
 1;
@@ -137,6 +141,12 @@ in blosxom flavours/templates
     comment.
     </%doc>
 
+    # Mason-style newline escaping, if last character on line is a backslash e.g.
+    <p>\
+    Foo bar\
+    </p>
+    # is rendered as: <p>Foo bar</p>
+    
 
 =head1 DESCRIPTION
 
@@ -185,6 +195,28 @@ For example:
     </%doc>
 
 Block comments cannot be nested.
+
+=head2 NEWLINE ESCAPING
+
+mason_blocks also supports mason-style newline escaping i.e. if the last
+character on a line is a backslash, mason_blocks escapes the line break,
+deleting both the backslash and the following newline character(s). This 
+is useful in conjunction with conditionals where you'd prefer the 
+conditional content to appear inline within the enclosing content e.g.
+
+  <a href="$permalink::story#comments">\
+  % if ($feedback::count == 0) {
+  No Comments \
+  % }
+  &raquo;</a>
+
+would be rendered as:
+
+  <a href="$permalink::story#comments">No Comments &raquo;</a>
+
+This is not just a prettiness issue - some browsers treat embedded
+whitespace (including newlines) as significant, even when they 
+shouldn't.
 
 =head2 VS. INTERPOLATE_FANCY
 
