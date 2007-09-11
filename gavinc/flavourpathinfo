@@ -1,0 +1,121 @@
+# Blosxom Plugin: flavourpathinfo
+# Author(s): Gavin Carr <gavin@openfusion.com.au>
+# Version: 0.001000
+# Documentation: 'perldoc flavourpathinfo'
+
+package flavourpathinfo;
+
+use strict;
+
+# --- Configurable variables -----
+
+my $debug_level = 0;
+
+# --------------------------------
+
+my $package = 'flavourpathinfo';
+sub debug {
+    my ($level, @msg) = @_;
+
+    if ($debug_level >= $level) {
+        print STDERR "$package debug $level: @msg\n";
+    }
+}
+
+sub start { 
+    my $path_info = $blosxom::path_info;
+    return 1 if -e "$blosxom::datadir/$path_info";
+    debug(1, "original path_info: $path_info");
+
+    $path_info =~ s!/$!!;
+    if ($path_info =~ m!^(.*)/([^/]+)$!) {
+        my $flavour = $2;
+        $path_info = "$1.$flavour";
+        my $path_file = "$1.$blosxom::file_extension";
+
+        debug(1, "path_file: $path_file");
+        debug(1, "munged path_info: $path_info");
+
+        if (-f "$blosxom::datadir/$path_file") {
+            debug(1, "munged \$path_info exists - updating \$blosxom::path_info");
+            $blosxom::path_info = $path_info;
+            $blosxom::flavour = $flavour;
+            $blosxom::path_info_yr = undef;
+        }
+    }
+
+    return 1; 
+}
+
+1;
+
+__END__
+
+=head1 NAME
+
+flavourpathinfo - allows flavour designation via a trailing path component
+instead of via a file extension
+
+=head1 DESCRIPTION
+
+flavourpathinfo is a syntactic sugar plugin that allows flavour designation 
+via a trailing path component instead of via a file extension e.g.
+
+    http://blog.example.com/category/post/html
+    http://blog.example.com/category/post/atom
+    http://blog.example.com/category/post/trackback
+
+instead of the more typical:
+
+    http://blog.example.com/category/post.html
+    http://blog.example.com/category/post.atom
+    http://blog.example.com/category/post.trackback
+
+=head1 USAGE
+
+Should be loaded early as it manipulates $blosxom::path_info
+e.g. as 00flavourpathinfo.
+
+=head1 SEE ALSO
+
+extensionless
+
+Blosxom: http://blosxom.sourceforge.net/
+
+=head1 BUGS
+
+Please report bugs either directly to the author or to the blosxom 
+development mailing list: <blosxom-devel@lists.sourceforge.net>.
+
+=head1 AUTHOR
+
+Gavin Carr <gavin@openfusion.com.au>, http://www.openfusion.net/
+
+=head1 LICENSE
+
+Copyright 2007 Gavin Carr.
+
+This plugin is licensed under the same terms as blosxom itself i.e.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+=cut
+
+# vim:ft=perl
+
