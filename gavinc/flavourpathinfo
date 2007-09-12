@@ -1,7 +1,8 @@
 # Blosxom Plugin: flavourpathinfo
 # Author(s): Gavin Carr <gavin@openfusion.com.au>
-# Version: 0.002000
+# Version: 0.002001
 # Documentation: 'perldoc flavourpathinfo'
+# Follows: extensionless
 
 package flavourpathinfo;
 
@@ -24,11 +25,15 @@ sub debug {
 
 sub start { 
     my $path_info = $blosxom::path_info;
-    debug(1, "original path_info: $path_info");
-    return 1 if -e "$blosxom::datadir/$path_info";
 
     # Remove any trailing /
     $path_info =~ s! /$ !!x;
+
+    my $path_file = $blosxom::path_info;
+    $path_file =~ s/\.\w+$/.$blosxom::file_extension/;
+    return 1 if -e "$blosxom::datadir/$path_info" || -f "$blosxom::datadir/$path_file";
+
+    debug(1, "original path_info: $path_info");
 
     # Check file/flavour variant
     if ($path_info =~ m! ^ (.*) / ([^/]+) $ !x) {
@@ -111,8 +116,11 @@ map to:
 
 =head1 USAGE
 
-Should be loaded early as it manipulates $blosxom::path_info
-e.g. as 00flavourpathinfo.
+If used with the 'extensionless' plugin, it should be loaded
+*after* extensionless.
+
+But should be loaded early as it manipulates $blosxom::path_info
+e.g. as 02flavourpathinfo.
 
 =head1 SEE ALSO
 
