@@ -16,6 +16,21 @@ my $home = 'home';
 # What divider should I use between path components (e.g. a > path > to...)
 my $divider = " :: ";
 
+# True or false: should we show a breadcrumb containing only $home
+# when looking at $blosxom::url?  Optional; default is false.
+my $home_breadcrumb = 0;
+
+# Code reference which is applied to each path name to make it more
+# user friendly.  Example : { ucfirst } to capitalize first letter.
+# Value to modify is in $_; change $_ to what should be displayed.
+# Optional; set to undef for no action.
+#
+# Example: Convert each word to upper case, and change - or _ to space:
+# my $pretty = sub { my @words = split /[-_]+/;
+#                    $_=join(" ", map { ucfirst} @words ) };
+my $pretty = sub { my @words = split /[-_]+/;
+                   $_=join(" ", map { ucfirst} @words ) };
+
 # --------------------------------
 
 $breadcrumbs; # use as $breadcrumbs::breadcrumbs in flavour templates
@@ -31,7 +46,11 @@ sub start {
 sub head {
   my($pkg, $path, $head_ref) = @_;
 
-  $path or return 0;
+  unless($path) {
+    $breadcrumbs = $home if $home && $home_breadcrumb;
+    return 0;
+  }
+
   $path =~ s/\.$blosxom::flavour$//;
 
   my(@p, $p);
@@ -40,7 +59,8 @@ sub head {
   foreach ( split /\//, $path ) {
     $p .= "/$_";
 
-    push @p, 
+    &$pretty if ref $pretty eq "CODE";
+    push @p,
       $p ne "/$path"
       ? qq{<a href="$blosxom::url$p/index.$blosxom::flavour">$_</a>}
       : qq{$_};
