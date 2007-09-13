@@ -176,6 +176,7 @@ sub entries {
 							or !-f "$blosxom::static_dir/$1/index." . $blosxom::static_flavours[0]
 #							or stat("$blosxom::static_dir/$1/index." . $blosxom::static_flavours[0])->mtime < stat($File::Find::name)->mtime
 # Trying to fix for static mode
+# Barijaona's note : you may uncomment the above instruction if you want to be able to fix typos in static rendering
 							or stat("$blosxom::static_dir/$1/index." . $blosxom::static_flavours[0])->mtime < $files{$File::Find::name}
 						)
 						and $indexes{$1} = 1
@@ -259,6 +260,7 @@ sub extract_date {
 					
 					if (($line =~ /\r/) || ($new_story =~ /\r/)) {
 						warn "Entries_Cache: File $file has non-UNIX line endings; cannot update metatags...\n";
+						close FILE;
 						return 0;
 					}
 					
@@ -299,7 +301,7 @@ sub extract_date {
 					close FILE;
 					return 0;
 				} else {
-					close File;
+					close FILE;
 					return 0;
 				}
 			}
