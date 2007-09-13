@@ -4,23 +4,36 @@
 # Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 # SeeMore plugin Home/Docs/Licensing:
 #   http://molelog.molehill.org/blox/Computers/Internet/Web/Blosxom/SeeMore/
-
+#
+# Modified 25-Sept-2004 Steve Schwarz
+# Added $show_all_of_stories_until to not apply the plugin until the indicated 
+# story number is parsed. 
+# 
 package seemore;
 
 # --- Configuration Variables ---
 # regular expression to split on
 $seemore_split ||= qr/\f|<!-- more -->/;
 
-# show the whole artcile on individual article pages?  Good for summaries,
+# show the whole article on individual article pages?  Good for summaries,
 # not so good for spoiler protection
 $more_on_article = 1 unless defined $more_on_article;
 
-$debug_level = 1 unless defined $debug_level;
+# show the entire story (no "See More..." link) until the specified number
+# of stories are shown. This allows index pages to show the entire story
+# for the specified number of stories; afterwhich the "See More..." link 
+# is added to subsequent stories. This test is performed last so if
+# $more_on_article is set it will be honored correctly. 
+# Default to applying to all stories.
+$show_all_of_stories_until = 0 unless defined $show_all_of_stories_until;
+
+$debug_level = 0 unless defined $debug_level;
 # ----------------------------------------------------------------------
 
 use FileHandle;
 use CGI;
 my $package = 'seemore';
+my $story_cnt = 0;	# current count of stories on this page
 
 sub debug {
     my ($level, @msg) = @_;
@@ -46,12 +59,14 @@ sub report {
 sub show_more_p {
   return 1 if $more_on_article and $blosxom::path_info =~ m:\.:;
   return 1 if (CGI::param("seemore"));
+  return 1 if $story_cnt <= $show_all_of_stories_until;
 # XXX return 1 if google/&c spider?
   return 0;
 }
 
 sub start {
   debug(1, "start() called, enabled");
+  $story_cnt = 0;	# current count of stories on this page
   while (<DATA>) {
     last if /^(__END__)?$/;
     my ($flavour, $comp, $txt) = split ' ',$_,3;
@@ -65,6 +80,7 @@ sub story {
   my ($pkg, $path, $filename, $story_ref, $title_ref, $body_ref) = @_;
 
   debug(2, "story() called");
+  $story_cnt++; 
   my $more;
   ($$body_ref, $more) = split $seemore_split, $$body_ref, 2;
   if ($more) {
@@ -125,6 +141,11 @@ argument; it defaults to on (0+3i: this is a change of behavior from
 previous versions).  Turning this on makes sense if you're using seemore
 to put summaries on a main index paage, but probably not if you're using it
 for spoiler protection.
+
+C<$show_all_of_stories_until> controls whether the plugin will not apply
+until the indicated story number is parsed. This allows index pages to show
+the entire story for the specified number of stories;
+afterwhich the "See More..." link is added to subsequent stories.
 
 C<$debug_level> can be set to a value between 0 and 5; 0 will output
 no debug information, while 5 will be very verbose.  The default is 1,
