@@ -26,7 +26,7 @@ sub story {
   foreach ( split /\n/, $$body_ref ) {
     /^\s*$/ and $in_header = 0 and next;
     if ( $in_header ) {
-      my($key, $value) = m!^$meta_prefix(.+?):\s*(.+)$!;
+      my($key, $value) = m!^$meta_prefix(.+?)\s*:\s*(.+)$!;
       $key =~ /^\w+$/ and push(@keys,$key) and $$key = $value and next;
     }
     $body .= $_ . "\n";
