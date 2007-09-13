@@ -63,13 +63,17 @@ story : an individual story page
 
 =head1 AUTHOR
 
-Barijaona Ramaholimihaso <http://homepage.mac.com/barijaona>
+Barijaona Ramaholimihaso <blosxom@barijaona.com>
 
 =head1 SEE ALSO
 
-Blosxom Home/Docs/Licensing: http://www.raelity.org/apps/blosxom/
+Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net
 
-Blosxom Plugin Docs: http://www.raelity.org/apps/blosxom/plugin.shtml
+Blosxom Plugin Docs: http://blosxom.sourceforge.net/plugins/
+
+=head1 BUGS
+
+None known; please send bug reports and feedback to the Blosxom development mailing list <blosxom-devel@lists.sourceforge.net>.
 
 =head1 COPYRIGHT
 

@@ -1,5 +1,5 @@
 # Blosxom Plugin: prefs
-# Author(s): Barijaona Ramaholimihaso <prefs@barijaona.com>
+# Author(s): Barijaona Ramaholimihaso <blosxom@barijaona.com>
 # based on config plugin authored by Rael Dornfest <rael@oreilly.com> 
 # Version: 2005-11-20
 # Documentation: See the bottom of this file or type: perldoc prefs
@@ -105,14 +105,13 @@ Prefs is based on the config plugin written by Rael Dornfest  <rael@oreilly.com>
 
 =head1 SEE ALSO
 
-Blosxom Home/Docs/Licensing: http://www.raelity.org/apps/blosxom/
+Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net
 
-Blosxom Plugin Docs: http://www.raelity.org/apps/blosxom/plugin.shtml
+Blosxom Plugin Docs: http://blosxom.sourceforge.net/plugins/
 
 =head1 BUGS
 
-Address bug reports and comments to <prefs@barijaona.com> or to the Blosxom mailing list 
-[http://www.yahoogroups.com/group/blosxom].
+None known; please send bug reports and feedback to the Blosxom development mailing list <blosxom-devel@lists.sourceforge.net>.
 
 =head1 LICENSE
 

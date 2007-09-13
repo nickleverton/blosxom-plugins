@@ -156,21 +156,25 @@ Version number is the date on which this version of the plug-in was created.
 
 =head1 AUTHOR
 
-Barijaona Ramaholimihaso <static_file@barijaona.com>
+Barijaona Ramaholimihaso <blosxom@barijaona.com>
 
 Original idea by Raffi Krikorian <r@bitwaste.com>, http://www.bitwaste.com/, author of the binary plugin.
 
 =head1 SEE ALSO
 
-Blosxom Home/Docs/Licensing: http://www.raelity.org/apps/blosxom/
+Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net
 
-Blosxom Plugin Docs: http://www.raelity.org/apps/blosxom/plugin.shtml
+Blosxom Plugin Docs: http://blosxom.sourceforge.net/plugins/
 
 =head1 NOTES
 
 If you are using this plugin in Blosxom's dynamic mode, you might consider creating a custom B<error> flavour, because Blosxom's default B<error> flavour could be confusing for the user.
 
 It is recommanded, for performance optimization, to put a number in front of the name of this plugin, for instance to name it B<00static_file>, so that it loads among the first.
+
+=head1 BUGS
+
+None known; please send bug reports and feedback to the Blosxom development mailing list <blosxom-devel@lists.sourceforge.net>.
 
 =head1 LICENSE
 
