@@ -1,7 +1,8 @@
 # Blosxom Plugin: interpolate_fancy
 # Author: Rael Dornfest <rael@oreilly.com>, 
 # Modified by: Matthijs Kooijman <m.kooijman@student.utwente.nl>
-# Version: 2006-01-14
+# and Barijaona Ramaholimihaso
+# Version: 2007-09-13
 # Documentation: See the bottom of this file or type: 
 # perldoc interpolate_fancy
 
@@ -18,6 +19,9 @@ package interpolate_fancy;
 our $recurse_into_story = 0;
 
 # --------------------------------
+
+my $parsing_story = 0 ;
+
 
 sub start {
   1;
@@ -59,7 +63,7 @@ sub _resolve_nested {
                              # we're done. 
         }
         
-        $displayitem = $display;
+        my $displayitem = $display;
         if ($displayitem) { # Don't care about these tests if we're not displayed anyway.
             my $negated = ($var =~ s/^\!//); # Remove negation mark
             if ($negated || !$attr) {
@@ -106,16 +110,22 @@ sub interpolate {
     my $template = shift;
 
     # Backward Compatibility with core Blosxom style interpolation
-    $template =~ s#(?<!<)(?<!<\?)(?<!<\?!)(\$\w+(?:::)?\w*)#<$1 />#gs; 
+    unless ($parsing_story)
+    	{$template =~ s#(?<!<)(?<!<\?)(?<!<\?!)(\$\w+(?:::)?\w*)#<$1 />#gs; };
 
     #
     # Conditional inclusion
-    #
-    # e.g. <?$path>stuff</?>
+    # Defined
+    # e.g. <?$var>display if defined</?>
+    # Undefined 
+    # e.g. <?!$var>display if not defined</?>
+    # Tests 
+    # eq (eq), ne (ne), lt (<), gt (>), like (=~), unlike (!~)
+    # e.g. <?$var lt="123">display if $var less than 123</?>
     $template = interpolate_fancy::_resolve_nested($template, 1);
 
     #
-    # Variable expansion
+    # Variable expansion (unconditional, recursive)
     #
     # e.g. <$var />
     while( $template =~ s/<\$([a-zA-Z?]\w+(?:::)?\w*)\s+?\/>/"defined \$$1 ? \$$1 : undef"/gsee ) { }
@@ -154,12 +164,13 @@ sub _test {
 
 sub _action {
   my($plugin, $action, $attr, $content) = @_;
+  my $result;
 
   $content =~ s#<\@(\w+?)\.(\w+?)\s+?(.+?)?(?:>(.*?)<\/\@\1\.\2>|\s+?\/>)#&interpolate_fancy::_action($1,$2,$3,$4)#gse;
 
   my $attributes = interpolate_fancy::_attributes($attr);
   
-  $blosxom::plugins{$plugin} 
+  $blosxom::plugins{$plugin} > 0
     and $plugin->can($action) 
       and $result = $plugin->$action($attributes, $content);
 
@@ -177,6 +188,18 @@ sub _attributes {
   return $attributes;
 }
 
+sub story {
+	my($pkg, $path, $filename, $story_ref, $title_ref, $body_ref) = @_;
+ 
+ if ($recurse_into_story) {
+      $parsing_story = 1;
+      $$title_ref =&$blosxom::interpolate($$title_ref);
+      $$body_ref =&$blosxom::interpolate($$body_ref);
+      $parsing_story = 0;
+     }
+  return 1;
+}
+
 1;
 
 __END__
@@ -187,135 +210,110 @@ Blosxom Plug-in: interpolate_fancy
 
 =head1 SYNOPSIS
 
-Overrides Blosxom's far simpler to use, but more limited, default interpolate() 
-subroutine.
+Overrides Blosxom's far simpler to use, but more limited, default interpolate() subroutine.
 
-Include bits of text and template variable values in templates, either 
-conditionally or unconditionally:
+* Include bits of text and template variable values in templates, either conditionally or unconditionally;
 
-Perform actions (i.e. call plug-in subroutines) at any point in your page, 
-whether to act on current content and return results or no.
+* Perform actions (i.e. call plug-in subroutines) at any point in your page, whether to act on current content and return results or not.
 
-=head2 Variable expansion
-  This syntax will expand to the value of the referenced variable and can be
-  used to include dynamic content in your pages.
+=head2 Inclusions of bits of text and variables
+ 
+This syntax will expand to the value of the referenced variable and can be used to include dynamic content in your pages.
 
-  * Unconditionally and recursively
+=over 2
 
-    e.g. include a link to the story's path using various template variables.
+=item Unconditionally and recursively
 
-    <a href="<$url /><$path />"><$path /></a>
+e.g. include a link to the story's path using various template variables.
 
-    Limited by the $recurse_into_story configuration directive (see
-    the CONFIGURATION below).
+<a href="<$url /><$path />"><$path /></a>
 
-  * Unconditionally and recursively (backward compatibility with Blosxom's standard interpolation)
+Limited by the $recurse_into_story configuration directive (see the CONFIGURATION below).
 
-    e.g. include a link to the story's path using various template variables.
+=item Unconditionally (backward compatibility with Blosxom's standard interpolation)
 
-    <a href="$url$path">$path</a>
+e.g. include a link to the story's path using various template variables (non-recursive, and only inside templates).
 
-    Limited by the $recurse_into_story configuration directive (see
-    the CONFIGURATION below).
+<a href="$url$path">$path</a>
 
-==head2 Conditional inclusion
-  These tags will each have a certain condition attached to them, depending on
-  what syntax is used exactly. All text between the opening and closing tags
-  will only be included in the final output of the page if the given condition
-  is true, it will be discarded otherwise.
+=item If the template variable has a value (i.e. is defined)
 
-  Note that as of 2006-01-11 conditional tags can be nested, which effectively
-  allows you to specify the logical and of two (or more) conditions. There is
-  no way yet to specify the logical or, though. If you're using nested
-  conditions and they won't work properly, check your error log, since the
-  plugin puts warnings about incorrect nestings there.
+e.g. include a hyperlink to the story's path if it has a path (i.e. $path is defined).
 
-  * The template variable has a value (i.e. is defined)
+<?$path><a href="<$url /><$path />"><$path /></a></?>
 
-    e.g. include a hyperlink to the story's path if it has a path (i.e.
-    $path is defined).
+=item If the template variable doesn't have a value (i.e. is NOT defined)
 
-    <?$path><a href="<$url /><$path />"><$path /></a></?>
+e.g. include a hyperlink to home if path is undefined.
 
-  * The template variable doesn't have a value (i.e. is NOT defined)
+<?!$path><a href="<$url />">home</a></?>
 
-    e.g. include a hyperlink to home if path is undefined.
+=item If the template variable is equal (=) to a particular value
 
-    <?!$path><a href="<$url />">home</a></?>
+e.g. include "1 writeback" (singular) if the value of writeback count is 1
 
-  * The template variable is equal (=) to a particular value
+<$writeback::count /> <?$writeback::count eq="1">writeback</?>
 
-    e.g. include "1 writeback" (singular) if the value of writeback count is 1
+=item If the template variable is not equal (!=) to a particular value
 
-    <$writeback::count /> <?$writeback::count eq="1">writeback</?>
+e.g. include "x writebacks" (plural) if the value of Writeback count (x) is not 1
 
-  * The template variable is not equal (!=) to a particular value
+<$writeback::count /> <?$writeback::count ne="1">writebacks</?>
 
-    e.g. include "x writebacks" (plural) if the value of writeback 
-         count (x) is not 1
+=item If the template variable is less than (<) a particular value
 
-    <$writeback::count /> <?$writeback::count ne="1">writebacks</?>
+e.g. include "no writebacks" if the value of writeback count is < 1
 
-  * The template variable is less than (<) a particular value
+<?$writeback::count lt="1">no writebacks</?>
 
-    e.g. include "no writebacks" if the value of writeback count is < 1
+=item If the template variable is greater than (>) a particular value
 
-    <?$writeback::count lt="1">no writebacks</?>
+e.g. include "oodles of writebacks" if the value of writeback count is > 50
 
-  * The template variable is greater than (>) a particular value
+<?$writeback::count gt="50">oodles of writebacks</?>
 
-    e.g. include "oodles of writebacks" if the value of writeback count is > 50
+=item If the template variable is like (=~) a particular regular expression
 
-    <?$writeback::count gt="50">oodles of writebacks</?>
+e.g. Greet a visitor properly, depending on their courtesy title
 
-  * The template variable is like (=~) a particular regular expression
+Howdy, 
+<?$user::courtesy like="^(Mr\.?|Sir)$">Sir</?>
+<?$user::courtesy like="^(Mr?s\.?|Miss)$">M'am</?>
 
-    e.g. Greet a visitor properly, depending on their courtesy title
+=item If the template variable is unlike (!~) a particular regular expression
 
-    Howdy, 
-    <?$user::courtesy like="^(Mr\.?|Sir)$">Sir</?>
-    <?$user::courtesy like="^(Mr?s\.?|Miss)$">M'am</?>
+e.g. The posting is neither a film nor a book
 
-  * The template variable is unlike (!~) a particular regular expression
+<?$path unlike="/(Film|Literature)">no review</?>
 
-    e.g. The posting is neither a film nor a book
-
-    <?$path unlike="/(Film|Literature)">no review</?>
+=back
 
 =head2 Actions
 
-Perform an action (i.e. call a plug-in's subroutine) at any point in your page.
-Optionally pass arguments as key/value pairs stated as XML-style attributes.
+Performs an action (i.e. calls a plug-in's subroutine) at any point in your page. Optionally passes arguments as key/value pairs stated as XML-style attributes.
+
 For example: 
 
-  <@plugin.subroutine arg1="a" arg2="bee" />
+<@thePlugin.subroutine arg1="a" arg2="bee" />
 
-calls &plugin::subroutine( {'arg1'=>'a', 'arg2'=>'bee' } ).
+calls &Blosxom::Plugin::ThePlugin::subroutine( {'arg1'=>'a', 'arg2'=>'bee' } ).
 
-Specify that results should be sent to the browser using the output="yes" 
-attribute like so:
-  
-  <@plugin.subroutine arg1="a" arg2="bee" output="yes" />
+Specify that results should be sent to the browser using the output="yes" attribute like so:
+<@thePlugin.subroutine arg1="a" arg2="bee" output="yes" />
 
-Otherwise, subroutines will still have their effect, but the results will 
-be tossed out.
+Otherwise, subroutines will still have their effect, but the results will be tossed out.
 
-Content wrapped in the action call is sent as another argument to the 
-subroutine:
+Content wrapped in the action call is sent as another argument to the subroutine:
 
-  <@plugin.subroutine encoding="Latin1" output="yes">
+  <@thePlugin.subroutine encoding="Latin1" output="yes">
   pass this content
-  </@plugin.subroutine> 
+  </@thePlugin.subroutine> 
 
-This calls &plugin::subroutine( {'encoding'=>'Latin1', 'output'=>'yes' }, "pass this content" ).
+This calls &thePlugin::subroutine( {'encoding'=>'Latin1', 'output'=>'yes' }, "pass this content" ).
 
-Actions are recursive, meaning that you can embed an action inside another, 
-and so on and so on and so on.  Actions are unfolded from the inside out,
-with the most deeply embedded first, second deepest second, and so forth until
-the outermost action is performed last.
+Actions are recursive, meaning that you can embed an action inside another, and so on and so on and so on.  Actions are unfolded from the inside out, with the most deeply embedded first, second deepest second, and so forth until the outermost action is performed last.
 
-Recursion is limited by the $recurse_into_story configuration directive (see
-the CONFIGURATION below).
+Recursion is limited by the $recurse_into_story configuration directive (see the CONFIGURATION below).
 
 =head3 An Example
 
@@ -325,22 +323,22 @@ sample actions:
 
 --
 
-# For the sake of this example, assume these actions live in a "myplugin"
-# plugin
+# For the sake of this example, assume these actions live in a "myplugin" plugin
 
 # This action strips HTML from its content
+
 sub strip_html {
   my($self, $attributes, $content) = @_;
   $content =~ s!</?.+?>!!g;
   return $content;
 }
 
-# This action foreshortens its content to a length specified in the call to
-# action's length attribute
+# This action foreshortens its content to a length specified in the call to action's length attribute
+
 sub foreshorten {
   my($self, $attributes, $content) = @_;
   my $default_length = 144;
-  return substr($content, 0, $attributes{'length'}||$default_length);
+  return substr($content, 0, $attributes->{'length'}||$default_length);
 }
 
 --
@@ -348,30 +346,26 @@ sub foreshorten {
 Calling these individually in a Blosxom flavour template looks something like:
 
 The following bit of text is devoid of HTML:
+
 <@myplugin.strip_html output="Yes">
 Silly <a href="http://www.raelity.org/">me</a>, I plumb 
 <em>forgot</em> to remove the HTML.
 </@myplugin.strip_html>
 
 The following bit of text is only 20 characters in length:
-<@myplugin.foreshorten output="Yes">
-This text is far longer than 20 characters on the page, 
-but will only appear as "This text is far lon" in the
+
+<@myplugin.foreshorten length="20" output="Yes">This text is far longer than 20 characters on the page, but will only appear as "This text is far lon" in the
 resulting page.
 </@myplugin.foreshorten>
 
 And in combination, stripping the HTML _before_ foreshortening (notice
 the strip_html action is embedded inside the foreshorten action and
-thus is run first):
+thus is run first).
 
 The following bit of text is only 20 characters in length and devoid of HTML:
-<@myplugin.foreshorten output="Yes">
-<@myplugin.strip_html output="Yes">
-Silly <a href="http://www.raelity.org/">me</a>, I plumb 
+
+<@myplugin.foreshorten length="20" output="Yes"><@myplugin.strip_html output="Yes">Silly <a href="http://www.raelity.org/">me</a>, I plumb 
 <em>forgot</em> to remove the HTML.
-This text is far longer than 20 characters on the page, 
-but will only appear as "This text is far lon" in the
-resulting page.
 </@myplugin.strip_html>
 </@myplugin.foreshorten>
 
@@ -413,7 +407,7 @@ run your templates through the interpolate2fancy utility
 
 =head1 VERSION
 
-2006-01-11
+2007-09-13 : corrects the $recurse_into_story feature in XML flavours
 
 =head1 AUTHOR
 
