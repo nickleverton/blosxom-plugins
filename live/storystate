@@ -127,24 +127,63 @@ head and foot as well.
 
 The request flag variables are:
 
-$permalink	true if request url is a subdir permalink, e.g. /this/that/story.html
-$datepermalink	true if request url is a date permalink, e.g. /2003/09/07/story.html
-$anypermalink   true if request url is either of above
-$blogroot	true if request is for blog's root e.g. / or /index.html
-$archive	true if request if date style, e.g. /2003/09
-$category	true if request is subdir style, e.g. /this/that
+=over
+
+=item $permalink
+
+true if request url is a subdir permalink, e.g. /this/that/story.html
+
+=item $datepermalink
+
+true if request url is a date permalink, e.g. /2003/09/07/story.html
+
+=item $anypermalink
+
+true if request url is either of above
+
+=item $blogroot
+
+true if request is for blog's root e.g. / or /index.html
+
+=item $archive
+
+true if request if date style, e.g. /2003/09
+
+=item $category
+
+true if request is subdir style, e.g. /this/that
+
+=back
 
 There is request-level text variable:
 
-$rqst_category  the category in the request.  Similar to $blosxom::path, but
-                available in the head.  Mixed mode (category+date) request
-                are ok, only returns category.
+=over
+
+=item $rqst_category
+
+the category in the request.  Similar to $blosxom::path, but
+available in the head.  Mixed mode (category+date) request
+are ok, only returns category.
+
+=back
 
 The story-specific flag variables are:
 
-$writeback_closed	true if writebacks are closed for story (see below)
-$permalink_wbopen	true if !$writeback_closed and $permalink
-$permalink_wbclosed	true if $writeback_closed and $permalink
+=over
+
+=item $writeback_closed
+
+true if writebacks are closed for story (see below)
+
+=item $permalink_wbopen
+
+true if !$writeback_closed and $permalink
+
+=item $permalink_wbclosed
+
+true if $writeback_closed and $permalink
+
+=back
 
 The idea of closing writebacks is that you are no longer accepting comments for a 
 given story.  Just add meta-writeback: on or meta-writeback: off to the header of 
@@ -155,13 +194,22 @@ against these variables in our story template, see the example below.
 
 There is also a story-specific text variable:
 
-$writeback_message	description of writeback state for story
+=over
 
-This is useful for links to your writeback page.  It returns (by default):
+=item $writeback_message
+
+description of writeback state for story
+
+=back
+
+This is useful for links to your writeback page.  It returns (by default) the appropriate one of:
 
 'Add the first comment'	If writebacks are open for story and no comments exist
+
 'No Comments'		if writebacks are close and no comments exist
+
 '1 comment'		if only one comment
+
 'n comments'		if >1 comment, n=$writeback::count
 
 These messages are configurable, see the config variables at the top of the file,
