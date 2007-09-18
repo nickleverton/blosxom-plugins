@@ -8,29 +8,50 @@ cd `dirname $0`
 NAME=blosxom-plugins
 VERSION=`cat VERSION`
 
-test -d $NAME-$VERSION && rm -rf $NAME-$VERSION
-mkdir $NAME-$VERSION
+for SIZE in large medium small; do
+  TARBALL="$NAME-$SIZE-$VERSION"
+  test -d $TARBALL && rm -rf $TARBALL
+  mkdir $TARBALL
 
-find * \( -name $NAME-$VERSION -o -name CVS \) -prune -o -type f -exec cp -p {} $NAME-$VERSION \;
+  # Small/Medium
+  if [ -f MANIFEST.$SIZE ]; then
+    for i in `cat MANIFEST.$SIZE`; do
+      if [ -f $i ]; then
+        cp -p $i $TARBALL
+      elif [ -f $NAME-large-$VERSION/$i ]; then
+        cp -p $NAME-large-$VERSION/$i $TARBALL
+      else
+        echo "Warning: cannot find plugin '$i' (MANIFEST.$SIZE)"
+      fi
+    done
 
-# Prune unwanted files
-for i in make-dist README.cvs; do
-  rm -f $NAME-$VERSION/$i
+  # Large
+  else
+    # Copy everything
+    find * \( -name $TARBALL -o -name CVS \) -prune -o -type f -exec cp -p {} $TARBALL \;
+
+    # Prune unwanted files
+    for i in make-dist README.cvs blosxom-plugins-medium.spec; do
+      rm -f $TARBALL/$i
+    done
+  fi
+   
+  # Create tarball
+  which tar >/dev/null 2>&1
+  if [ $? == 0 ]; then
+    echo "Creating $TARBALL.tar.gz"
+    tar -zcf $TARBALL.tar.gz $TARBALL
+  fi
+
+  # Create zip file
+  which zip >/dev/null 2>&1
+  if [ $? == 0 ]; then
+    echo "Creating $TARBALL.zip"
+    zip -q -r $TARBALL.zip $TARBALL 
+  fi
 done
 
-# Create tarball
-which tar >/dev/null 2>&1
-if [ $? == 0 ]; then
-  echo "Creating $NAME-$VERSION.tar.gz"
-  tar -zcf $NAME-$VERSION.tar.gz $NAME-$VERSION
-fi
-
-# Create zip file
-which zip >/dev/null 2>&1
-if [ $? == 0 ]; then
-  echo "Creating $NAME-$VERSION.zip"
-  zip -q -r $NAME-$VERSION.zip $NAME-$VERSION 
-fi
-
-test -d $NAME-$VERSION && rm -rf $NAME-$VERSION
-
+for SIZE in large medium small; do
+  TARBALL="$NAME-$SIZE-$VERSION"
+  test -d $TARBALL && rm -rf $TARBALL
+done

@@ -3,8 +3,6 @@ you just copy it into the directory you have configured as your
 $plugin_dir in blosxom.cgi. You should also check the top of the 
 plugin for a configuration section, and configure to taste.
 
-
 Plugin authors: if you would like to have your plugins included
 here, please send an email to blosxom-devel@lists.sourceforge.net.
-
 

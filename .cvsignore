@@ -1,4 +1,6 @@
 .svn
 .bzr
 .bzrignore
-blosxom-plugins*
+blosxom-plugins-small*
+blosxom-plugins-medium*
+blosxom-plugins-large*
