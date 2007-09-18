@@ -5,7 +5,7 @@
 # Based on entries_index by Rael Dornfest
 # Documentation help contributed by Iain Cheyne
 
-package entriescache;
+package entries_cache;
 
 # --- Configurable variables -----
 
