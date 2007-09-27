@@ -2,7 +2,7 @@
 # Author: Rael Dornfest <rael@oreilly.com>, 
 # Modified by: Matthijs Kooijman <m.kooijman@student.utwente.nl>
 # and Barijaona Ramaholimihaso
-# Version: 2007-09-13
+# Version: 2007-09-27
 # Documentation: See the bottom of this file or type: 
 # perldoc interpolate_fancy
 
@@ -49,7 +49,7 @@ sub _resolve_nested {
     my $display  = shift;
   
     while (1) {
-        if ($template !~ /(.*?)<\?(\!?\$\w+(?:::)?\w*)(?:\s+?(.+?))?>(.*)/s) {
+        if ($template !~ /(.*?)<\?(\!?\$\w+(?:::\w+)*)(?:\s+?(.+?))?>(.*)/s) {
             return $template; # No open tags, normal text
         }
        
@@ -111,7 +111,7 @@ sub interpolate {
 
     # Backward Compatibility with core Blosxom style interpolation
     unless ($parsing_story)
-    	{$template =~ s#(?<!<)(?<!<\?)(?<!<\?!)(\$\w+(?:::)?\w*)#<$1 />#gs; };
+    	{$template =~ s#(?<!<)(?<!<\?)(?<!<\?!)(\$\w+(?:::\w+)*)#<$1 />#gs; };
 
     #
     # Conditional inclusion
@@ -128,14 +128,14 @@ sub interpolate {
     # Variable expansion (unconditional, recursive)
     #
     # e.g. <$var />
-    while( $template =~ s/<\$([a-zA-Z?]\w+(?:::)?\w*)\s+?\/>/"defined \$$1 ? \$$1 : undef"/gsee ) { }
+    while( $template =~ s/<\$([a-zA-Z?]\w+(?:::\w+)*)\s+?\/>/"defined \$$1 ? \$$1 : undef"/gsee ) { }
 
     #
     # Actions 
     #
     # e.g. <@plugin.subroutine arg1="a" output="no" />
     # e.g. <@plugin.subroutine encoding="Latin1" output="yes">pass content</@> 
-    $template =~ s#<\@(\w+?)\.(\w+?)\s+?(.+?)?(?:>(.*?)<\/\@\1\.\2>|\s+?\/>)#&interpolate_fancy::_action($1,$2,$3,$4)#gse;
+    $template =~ s#<\@((?:\w|::)+?)\.(\w+?)\s+?(.+?)?(?:>(.*?)<\/\@\1\.\2>|\s+?\/>)#&interpolate_fancy::_action($1,$2,$3,$4)#gse;
 
     # Unmangle mangled interpolation tags in story $title and $body
     # (by now in the template itself)
@@ -166,7 +166,7 @@ sub _action {
   my($plugin, $action, $attr, $content) = @_;
   my $result;
 
-  $content =~ s#<\@(\w+?)\.(\w+?)\s+?(.+?)?(?:>(.*?)<\/\@\1\.\2>|\s+?\/>)#&interpolate_fancy::_action($1,$2,$3,$4)#gse;
+  $content =~ s#<\@((?:\w|::)+?)\.(\w+?)\s+?(.+?)?(?:>(.*?)<\/\@\1\.\2>|\s+?\/>)#&interpolate_fancy::_action($1,$2,$3,$4)#gse;
 
   my $attributes = interpolate_fancy::_attributes($attr);
   
@@ -407,7 +407,16 @@ run your templates through the interpolate2fancy utility
 
 =head1 VERSION
 
+2007-09-27
+
+=head1 VERSION HISTORY
+
+2007-09-27 : enables more than one :: in variable names
+
 2007-09-13 : corrects the $recurse_into_story feature in XML flavours
+
+v20061114 : fixes from Matthijs Kooijman (including properly support for nested
+conditions)
 
 =head1 AUTHOR
 
