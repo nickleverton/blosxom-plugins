@@ -1,9 +1,9 @@
 # Blosxom Plugin: rss20
 # Author(s): Gavin Carr <gavin@openfusion.com.au>
-# Version: 0.001000
-# Requires: lastmodified2
+# Version: 0.001001
+# Requires: storydate, lastmodified2
 # Suggests: absolute
-# Follows:  lastmodified2
+# Follows:  storydate, lastmodified2
 
 package rss20;
 
@@ -45,9 +45,6 @@ $copyright = '';
 
 # Generator that produced this feed
 $generator_url = "http://blosxom.sourceforge.net/?v=$blosxom::version";
-
-# Debug verbosity
-my $debug_level = 0;
 
 # --------------------------------
 
@@ -98,7 +95,7 @@ HEAD
             <description>\$body</description>                                                   
             <comments>$rss20::trackback_link</comments>                                                            
             <guid isPermaLink="true">$rss20::permalink</guid>                                                          
-            <dc:date>\$lastmodified2::story_iso8601</dc:date>
+            <dc:date>\$storydate::story_iso8601</dc:date>
         </item>
 STORY
 
