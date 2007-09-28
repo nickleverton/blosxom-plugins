@@ -1,6 +1,6 @@
 # Blosxom Plugin: flavourpathinfo
 # Author(s): Gavin Carr <gavin@openfusion.com.au>
-# Version: 0.002001
+# Version: 0.002002
 # Documentation: 'perldoc flavourpathinfo'
 # Follows: extensionless
 
@@ -10,18 +10,11 @@ use strict;
 
 # --- Configurable variables -----
 
-my $debug_level = 0;
+# None
 
 # --------------------------------
 
-my $package = 'flavourpathinfo';
-sub debug {
-    my ($level, @msg) = @_;
-
-    if ($debug_level >= $level) {
-        print STDERR "$package debug $level: @msg\n";
-    }
-}
+# use Blosxom::Debug debug_level => 1;
 
 sub start { 
     my $path_info = $blosxom::path_info;
@@ -33,7 +26,7 @@ sub start {
     $path_file =~ s/\.\w+$/.$blosxom::file_extension/;
     return 1 if -e "$blosxom::datadir/$path_info" || -f "$blosxom::datadir/$path_file";
 
-    debug(1, "original path_info: $path_info");
+    # debug(1, "original path_info: $path_info");
 
     # Check file/flavour variant
     if ($path_info =~ m! ^ (.*) / ([^/]+) $ !x) {
@@ -41,10 +34,10 @@ sub start {
         my $path_info_new = "$1.$flavour";
         my $path_file = "$1.$blosxom::file_extension";
 
-        debug(2, "path_file: $path_file, path_info_new: $path_info_new");
+        # debug(2, "path_file: $path_file, path_info_new: $path_info_new");
 
         if (-f "$blosxom::datadir/$path_file") {
-            debug(1, "\$path_info_new exists - updating \$blosxom::path_info");
+            # debug(1, "\$path_info_new exists - updating \$blosxom::path_info");
             $blosxom::path_info = $path_info_new;
             $blosxom::flavour = $flavour;
             $blosxom::path_info_yr = undef;
@@ -56,21 +49,21 @@ sub start {
     if ($path_info =~ m! ^ (?: (.*) / )? ([^/]+) $ !x) {
         my $dir = $1 || '';
         my $flavour = $2;
-        debug(2, "dir: $dir, flavour: $flavour");
+        # debug(2, "dir: $dir, flavour: $flavour");
   
         # Check there isn't an entry matching this
         if (-f "$blosxom::datadir$dir/$flavour.$blosxom::file_extension") {
-          debug(2, "entry $blosxom::datadir/$dir/$flavour.$blosxom::file_extension found - skipping");
+          # debug(2, "entry $blosxom::datadir/$dir/$flavour.$blosxom::file_extension found - skipping");
           return 1;
         }
           
         # Check $dir is a directory (sanity check - overly aggressive?)
         if ($dir && ! -d "$blosxom::datadir/$dir") {
-          debug(2, "dir '$dir' is set but not a directory");
+          # debug(2, "dir '$dir' is set but not a directory");
           return 1; 
         }
 
-        debug(1, "dir '$dir' not set or exists and directory - setting \$blosxom::path_info");
+        # debug(1, "dir '$dir' not set or exists and directory - setting \$blosxom::path_info");
         $blosxom::path_info = $dir;
         $blosxom::flavour = $flavour;
         $blosxom::path_info_yr = undef;
