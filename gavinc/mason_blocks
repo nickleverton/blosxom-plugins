@@ -1,15 +1,16 @@
 # Blosxom Plugin: mason_blocks
 # Author(s): Gavin Carr <gavin@openfusion.com.au>
-# Version: 0.002000
+# Version: 0.002001
 
 package mason_blocks;
 
 use strict;
 
+#use Blosxom::Debug debug_level => 1;
+
 # --- Configurable variables -----
 
-# Debug verbosity
-my $debug_level = 0;
+# None
 
 # --------------------------------
 
@@ -77,10 +78,7 @@ sub munge_blocks {
       my $else = pop @else;
       my $if_block = pop @if_blocks;
       my $else_block = pop @else_blocks;
-      warn "end_block: if '$if', if block " . 
-        scalar(@$if_block) . " lines, else block " . 
-        scalar(@$else_block) . " lines\n" 
-          if $debug_level;
+      # debug(1, "end_block: if '$if', if block " .  scalar(@$if_block) . " lines, else block " .  scalar(@$else_block) . " lines\n");
       # Check condition, and replace current line with appropriate flattened block
       if (eval "$if") {
         $_ = join "\n", @$if_block;
@@ -141,12 +139,6 @@ in blosxom flavours/templates
     comment.
     </%doc>
 
-    # Mason-style newline escaping, if last character on line is a backslash e.g.
-    <p>\
-    Foo bar\
-    </p>
-    # is rendered as: <p>Foo bar</p>
-    
 
 =head1 DESCRIPTION
 
@@ -195,28 +187,6 @@ For example:
     </%doc>
 
 Block comments cannot be nested.
-
-=head2 NEWLINE ESCAPING
-
-mason_blocks also supports mason-style newline escaping i.e. if the last
-character on a line is a backslash, mason_blocks escapes the line break,
-deleting both the backslash and the following newline character(s). This 
-is useful in conjunction with conditionals where you'd prefer the 
-conditional content to appear inline within the enclosing content e.g.
-
-  <a href="$permalink::story#comments">\
-  % if ($feedback::count == 0) {
-  No Comments \
-  % }
-  &raquo;</a>
-
-would be rendered as:
-
-  <a href="$permalink::story#comments">No Comments &raquo;</a>
-
-This is not just a prettiness issue - some browsers treat embedded
-whitespace (including newlines) as significant, even when they 
-shouldn't.
 
 =head2 VS. INTERPOLATE_FANCY
 
