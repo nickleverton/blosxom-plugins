@@ -39,6 +39,8 @@ macros
 mason_blocks
 menu
 meta
+metaclear
+metamail
 modiftime
 noslashredir
 pagetype
@@ -58,6 +60,7 @@ slashredir
 sort_by_path
 sort_reverse
 static_file
+storydate
 storytitle
 textile2
 textile2.README
