@@ -1,7 +1,7 @@
 # Blosxom Plugin: entries_cache -*- perl -*-
 # Author(s): Fletcher T. Penney <http://fletcher.freeshell.org/> 
 # Modified by Steve Schwarz <http://agilitynerd.com/>
-# Version: 0.92
+# Version: 0.93
 # Based on entries_index by Rael Dornfest
 # Documentation help contributed by Iain Cheyne
 
@@ -70,6 +70,10 @@ $update_static_rendering = 0 unless defined $update_static_rendering;
 	# When set to 0, Blosxom will not update statically rendered files
 	# even when stories are edited afterwards (Fletcher Penney's default).
 	# Set to 1 if you want to be able to fix typos in statically rendered stories.
+
+$index_umask = oct(007) unless defined $index_umask;
+	# Mask for index files : default allows Read/Write for owner and group,
+	# nothing for others.
 
 $debug = 0 unless defined $debug;
 	# Debugging flag
@@ -204,6 +208,7 @@ sub entries {
 
 			if ( $reindex ) {
 				# The index was recreated, so we should record the new version
+				my $savemask = umask $index_umask ;
 				if ( open ENTRIES, "> $indexname" ) {
 					foreach (sort keys %files) {
 						print ENTRIES "$_=>$files{$_}\n";
@@ -221,6 +226,8 @@ sub entries {
 				} else {
 					warn "couldn't > $others_indexname: $!\n";
 				}
+				umask $savemask ;
+
 			}
 		}
 	return (\%files, \%indexes, \%others);
@@ -451,9 +458,12 @@ large number of files to be indexed.
 
 =head1 VERSION
 
-0.92
+0.93
 
 =head1 VERSION HISTORY
+0.93    Added the $update_static_rendering and $index_umask
+        configuration variables.
+
 0.92    Checks if meta-creation_date is in the future and only displays
         entry if $show_future_entries is set. Otherwise future articles
         (by meta-creation_date or file modified time) are not displayed.
