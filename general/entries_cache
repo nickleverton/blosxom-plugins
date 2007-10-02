@@ -9,7 +9,8 @@ package entries_cache;
 
 # --- Configurable variables -----
 
-$delay = 0;		# How many minutes delay before entries are re-indexed?
+$delay = 0 unless defined $delay;
+			# How many minutes delay before entries are re-indexed?
 			# Set to 0 to force reindexing everytime - this
 			# will provide the same behavior as Rael's
 			# entries_index.  Though, I am not sure why one 
@@ -17,17 +18,20 @@ $delay = 0;		# How many minutes delay before entries are re-indexed?
 			# improve performance....
 			# SAS - I set this to zero so comments and new files
 			# are immediately visible.
-$indexname = "$blosxom::plugin_state_dir/.entries_cache.index";
-$others_indexname = "$blosxom::plugin_state_dir/.entries_cache.others";
+$indexname = "$blosxom::plugin_state_dir/.entries_cache.index" unless defined $indexname;
+$others_indexname = "$blosxom::plugin_state_dir/.entries_cache.others" unless defined $others_indexname;
 
 
-$use_date_tags = 1;	# Set to 1 to enable parsing meta- keywords
-			# for date tags
+$use_date_tags = 1 unless defined $use_date_tags;
+	# Set to 1 to enable parsing meta- keywords
+	# for date tags
 
-$use_UK_dates = 0;	# Default is mm/dd/yy (US)
-			# Set to 1 to use dd/mm/yy (UK)
+$use_UK_dates = 0 unless defined $use_UK_dates;
+	# Default is mm/dd/yy (US)
+	# Set to 1 to use dd/mm/yy (UK)
 
-$update_meta_date = 0;		# Add a meta_date tag if it doesn't exist
+$update_meta_date = 0 unless defined $update_meta_date;
+	# Add a meta_date tag if it doesn't exist
 	# This will require that perl has write access to your story files
 	# and that you are using the meta plugin.
 	
@@ -56,11 +60,19 @@ $meta_timestamp = "meta-creation_timestamp:" unless defined $meta_timestamp;
 $meta_date = "meta-creation_date:" unless defined $meta_date;
 	# date_tag is a human readable version
 
-$strip_meta_dates = 1;		# Strip meta-tags from story so that 
+$strip_meta_dates = 1 unless defined $strip_meta_dates;	
+	# Strip meta-tags from story so that 
 	# they are not displayed.  Unnecessary if you are running the 
 	# meta plugin.
 
-$debug = 0;	# Debugging flag
+$update_static_rendering = 0 unless defined $update_static_rendering;
+	# Recreate statically rendered files.
+	# When set to 0, Blosxom will not update statically rendered files
+	# even when stories are edited afterwards (Fletcher Penney's default).
+	# Set to 1 if you want to be able to fix typos in statically rendered stories.
+
+$debug = 0 unless defined $debug;
+	# Debugging flag
 
 # --------------------------------
 
@@ -174,9 +186,8 @@ sub entries {
 						and (
 							param('-all') 
 							or !-f "$blosxom::static_dir/$1/index." . $blosxom::static_flavours[0]
-#							or stat("$blosxom::static_dir/$1/index." . $blosxom::static_flavours[0])->mtime < stat($File::Find::name)->mtime
 # Trying to fix for static mode
-# Barijaona's note : you may uncomment the above instruction if you want to be able to fix typos in static rendering
+							or ( $update_static_rendering && stat("$blosxom::static_dir/$1/index." . $blosxom::static_flavours[0])->mtime < stat($File::Find::name)->mtime )
 							or stat("$blosxom::static_dir/$1/index." . $blosxom::static_flavours[0])->mtime < $files{$File::Find::name}
 						)
 						and $indexes{$1} = 1
