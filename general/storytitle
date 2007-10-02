@@ -5,26 +5,28 @@
 
 package storytitle;
 
+use strict;
+use vars qw($sep $right $right_sep $left_sep $page_title $page_title_left $page_title_right);
+
 # ------------------ Config variables ---------------------
 
 # default seperator to add to story title
-
-my $sep = ' : ';
+$sep = ' : ' unless defined $sep;
 
 # do we default to the right aligned title
 # 1 for right aligned, 0 for left
-
- my $right = 0;
+$right = 0 unless defined $right;
 
 # seperator for right aligned title 
-
-my $right_sep = ''
-    || $sep;
+$right_sep = ''|| $sep unless defined $right_sep;
 
 # seperator for left aligned title
+$left_sep = '' || $sep unless defined $left_sep;
 
-my $left_sep = ''
-    || $sep;
+# ------ Output variables  --------------------------------
+$page_title;
+$page_title_left;
+$page_title_right;
 
 # ---------------------------------------------------------
 
@@ -36,7 +38,7 @@ sub head {
         $title = (defined $blosxom::path_info_da ? "$blosxom::path_info_da/" : "") . (defined $blosxom::path_info_mo ? "$blosxom::path_info_mo/" : "") . "$blosxom::path_info_yr" ;
         
     } elsif ($dir =~ m#(.*?)/?([\-\.\w]+)\.(\w+)$# and $2 ne 'index') {
-        $file = join('/', $blosxom::datadir, $1, "$2.txt");
+        my $file = join('/', $blosxom::datadir, $1, "$2.txt");
         my $fh = new FileHandle;
         if (-f "$file" && $fh->open("< $file")) {
             chomp($title = <$fh>);
