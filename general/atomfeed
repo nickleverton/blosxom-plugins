@@ -59,6 +59,9 @@ $logo_url = "";
 # If you are using the built-in templates, leave this alone.
 my $template_placeholder = "{{{updated}}}";
 
+# Generator that produced this feed
+$generator_url = "http://blosxom.sourceforge.net/";
+
 # Enclosures support
 # ------------------
 
@@ -370,7 +373,7 @@ sub _load_templates {
   <link rel="self" type="application/atom+xml" href="$atomfeed::feed_url"/>
   <link rel="alternate" type="text/html" hreflang="$blosxom::blog_language" href="$blosxom::url" />
   <id>tag$atomfeed::colon$atomfeed::id_domain,$atomfeed::feed_yr$atomfeed::colon/$blosxom::path_info</id>
-  <generator uri="http://www.blosxom.com/" version="$blosxom::version">Blosxom</generator>
+  <generator uri="$atomfeed::generator_url" version="$blosxom::version">Blosxom</generator>
   $atomfeed::copyright
   $atomfeed::icon_url
   $atomfeed::logo_url
@@ -416,15 +419,14 @@ Blosxom Plug-in: atomfeed
 Provides an Atom 1.0 feed of your weblog.
 
 The plugin has all you need right on-board, including the appropriate
-flavour template components and a couple-three configuration
-directives.
+flavour template components and a few configuration directives.
 
-It supports the majorty of the Atom 1.0 spec exluding the <source>
+It supports the majority of the Atom 1.0 spec excluding the <source>
 element, which seems intended for use in feeds that contain items
 aggregated from other feeds, and currently the <contributor> element,
 which could be included using the meta plugin.
 
-Point you browser/Atom feed reader at http://yoururl/index.atom.
+Point your browser/feed reader at http://yoururl/index.atom.
 
 =head1 VERSION
 
@@ -463,7 +465,7 @@ author of each entry.  This can be overidden with the value provided
 by the B<whoami> or B<fauxami> plugins.
 
 B<$feed_yr> is where you specify the year your site began.  This is
-important  as atomfeed needs to create a unique, unchanging ID for
+important as atomfeed needs to create a unique, unchanging ID for
 your weblog and it need this information to do so.
 
 Everything else is optional.
@@ -694,7 +696,7 @@ Where "interpolate_fancy" is the name of the interpolation plugin
 you're turning off _just for the atom feed_.
 
 If you are planning on using the B<config> or B<prefs> plugins to alter
-varibales in the atomfeed namespace, you will need to ensure that
+variables in the atomfeed namespace, you will need to ensure that
 these plugins run B<before> the atomfeed plugin.  You can do this by
 prefixing a number to the name of the relevant plugin, such as B<1config>
 or B<1prefs>.
