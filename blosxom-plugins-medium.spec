@@ -1,7 +1,7 @@
 
 Name: blosxom-plugins-medium
 Summary: Plugins for blosxom, the lightweight blogging application
-Version: 2.0.0
+Version: 2.0.0rc1
 Release: 1
 Source0: http://downloads.sourceforge.net/blosxom/%{name}-%{version}.tar.gz
 License: MIT/GPL/Perl
@@ -10,7 +10,8 @@ Group: Applications/Internet
 Prefix: /usr/share/blosxom/plugins
 BuildRoot: %{_tmppath}/%{name}-%{version}
 BuildArch: noarch
-Conflicts: blosxom-plugins-large
+Conflicts: blosxom-plugins-small, blosxom-plugins-large
+Provides: blosxom-plugins, blosxom-plugins-small
 
 %description
 This package contains a set of plugins for blosxom, the lightweight
@@ -45,7 +46,7 @@ rm -f %{buildroot}/usr/share/blosxom/plugins/*.spec
 /usr/share/blosxom/plugins/*
 %doc README
 %doc *.README
-#%doc *.LICENCE 
+%doc *.LICENCE 
 
 %changelog
 * Tue Sep 18 2007 Gavin Carr <gavin@openfusion.com.au> 2.0.0-1
