@@ -31,7 +31,7 @@ for SIZE in large medium small; do
     find * \( -name $TARBALL -o -name CVS \) -prune -o -type f -exec cp -p {} $TARBALL \;
 
     # Prune unwanted files
-    for i in make-dist README.cvs blosxom-plugins-medium.spec; do
+    for i in make-dist README.cvs blosxom-plugins-*.spec; do
       rm -f $TARBALL/$i
     done
   fi
