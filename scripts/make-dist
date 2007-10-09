@@ -3,7 +3,7 @@
 # Quick script to make a flattened tarball (unix)
 #
 
-cd `dirname $0`
+cd `dirname $0`/..
 
 NAME=blosxom-plugins
 VERSION=`cat VERSION`
