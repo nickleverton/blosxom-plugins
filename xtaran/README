@@ -5,3 +5,69 @@ http://noone.org/blosxom/
 Axel's blog (of course powered by blosxom) can be found at
 http://noone.org/blog and his blog posts about and around blosxom can be
 found at http://noone.org/blog/English/Computer/Web/Blosxom
+
+Purpose and state of these plugins:
+
++ pathbasedtagging: 
+
+  Only useful together with the tagging plugin. Adds the possibility to
+  use URL paths like blosxom.cgi/tags/whatever instead of
+  blosxom.cgi?tags=whatever to show only posts tagged with "whatever".
+
+  Status: Works, but bugs have been reported.
+
++ xml_ping_generic: 
+
+  Can "ping" arbitrary services. URLs and formats have to be configured,
+  though.
+
+  Status: Worked. Should still work. Haven't checked for a long time. ;-)
+
++ multcat:
+
+  Allows the use of symbolic links in categories. Useful only on unixoid
+  operating systems which support symbolic links. The tagging plugin is
+  much more straight forward and also works on Windows platforms.
+
+  Status: Works, but won't get further development. Succeeded by the
+  tagging plugin, but it's still there for legacy reasons. May get
+  bugfixes if necessary.
+
++ tagging: 
+
+  Allows tagging of posts as used by Technorati and others. Is able to
+  filter by tags. Offers a tagcloud either with font-size, colour or both.
+
+  Status: Got a few bug reports, but seems quite popular and generally
+  working. :-)
+
++ dept: 
+
+  Shows a "From the ... department" line as on Slashdot. Cheap language
+  recognition based on paths.
+
+  Status: Small, probably not that many bugs. Language recognition could
+  be more generic or more configurable.
+
++ date_rf822: 
+
+  Offers variables with RFC822 compliant dates, e.g. for feeds.
+
+  Status: Wild hack. Not sure, if it's really necessary.
+
++ acronyms: 
+
+  Automatic marking of words as <acronym>s or <abbr>eviations inside
+  postings.
+
+  Status: Works fine, the core has been used also in other environments
+
++ comments_antispam: 
+
+  Forked from the comment plugin. Offers the use of an external
+  blacklist and a very cheap but though effective text based (Question +
+  Answer) static captcha.
+
+  Status: Has a few known bugs (traceback doesn't work anymore) and some
+  probably useless legacy code in. Needs a revamp...
+
