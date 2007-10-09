@@ -3,6 +3,7 @@ Markdown
 Markdown.LICENCE
 Markdown.README
 absolute
+acronyms
 antispam
 atomfeed
 autotrack
@@ -11,10 +12,13 @@ breadcrumbs
 buy_from_amazon
 calendar
 categories
+comments_antispam
 config
 cookies
 cooluri2
 date_fullname
+date_rfc822
+dept
 emptymessage
 entries_index
 entries_cache
@@ -44,8 +48,10 @@ meta
 metaclear
 metamail
 modiftime
+multcat
 noslashredir
 pagetype
+pathbasedtagging
 permalink
 plugin_list
 prefs
@@ -65,6 +71,7 @@ sort_reverse
 static_file
 storydate
 storytitle
+tagging
 textile2
 textile2.README
 theme
@@ -75,3 +82,4 @@ wikieditish
 wikieditish.README
 writeback
 writeback.README
+xml_ping_generic
