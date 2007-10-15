@@ -29,7 +29,7 @@ $bt_bordercolor ||= '#757575';
 $bt_padding 	  = 5 unless defined $bt_padding;
 $bt_show_text 	  = 1 unless defined $bt_show_text;
 
-$debug_level = 2 unless defined $debug_level;
+$debug_level = 0 unless defined $debug_level;
 # ------------------------------------------------------------
 
 use File::stat;

@@ -18,7 +18,7 @@ $ShopperID     = undef
 $max_cache_age = 60 * 60 * 24
   unless defined $max_cache_age;
 
-$debug_level   = 1
+$debug_level = 0
   unless defined $debug_level;
 
 # -----------------------------------------------------

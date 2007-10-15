@@ -51,7 +51,7 @@ $max_cache_data_age = 60 * 60 * 24 * 7
 $max_cache_layout_age = 60 * 5
   unless defined $max_cache_layout_age;
 
-$debug_level = 1
+$debug_level = 0
   unless defined $debug_level;
 # -----------------------------------------------------
 

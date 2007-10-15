@@ -12,7 +12,7 @@ $macrodir = "$blosxom::plugin_state_dir/.macros"
     unless defined $macrodir;
 
 $use_caching = 1;
-$debug_level = 1;
+$debug_level = 0;
 # -------------------------------------------------------------------
 # types:
 #   string				implemented
