@@ -22,6 +22,7 @@ dept
 emptymessage
 entries_index
 entries_cache
+entries_cache_meta
 exclude
 extensionless
 fauxami
@@ -58,6 +59,7 @@ prefs
 prevnextstory
 rating
 readme
+recententries
 recentwritebacks
 redirect
 rss10
