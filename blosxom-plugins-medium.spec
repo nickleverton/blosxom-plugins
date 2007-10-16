@@ -11,7 +11,7 @@ Prefix: /usr/share/blosxom/plugins
 BuildRoot: %{_tmppath}/%{name}-%{version}
 BuildArch: noarch
 Conflicts: blosxom-plugins-small, blosxom-plugins-large
-Provides: blosxom-plugins, blosxom-plugins-small
+Provides: blosxom-plugins
 
 %description
 This package contains a set of plugins for blosxom, the lightweight
