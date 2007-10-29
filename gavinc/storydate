@@ -36,7 +36,7 @@ use vars qw(
     rfc822      => "%a, %d %b %Y  %T %z",
     # ISO 8601 format (localtime, including time zone offset)
     # Format is YYYY-MM-DDThh:mm:ssTZD per http://www.w3.org/TR/NOTE-datetime
-    iso8601     => "%Y-%m-%dT%T %z",
+    iso8601     => "%Y-%m-%dT%T%z",
 );
 
 sub start { 
@@ -93,12 +93,20 @@ sub get_story_dates {
 sub format_date {
     my ($format, $time, $use_gmtime) = @_;
     return unless $format;
+
+    my $date = '';
     if ($format =~ m/%/) {
-        return strftime($format, $time, $use_gmtime);
+        $date = strftime($format, $time, $use_gmtime);
     }
     elsif ($strftime_formats{ $format }) {
-        return strftime($strftime_formats{ $format }, $time, $use_gmtime);
+        $date = strftime($strftime_formats{ $format }, $time, $use_gmtime);
     }
+    # Hack to handle the fact that ISO8601 dates require a : in the timezone, which strftime doesn't support
+    if ($format eq 'iso8601') {
+        $date =~ s/(\d)(\d{2})$/$1:$2/;
+    }
+
+    return $date;
 }
 
 # strftime wrapper, using the first strftime() it finds in @strftime_modules
