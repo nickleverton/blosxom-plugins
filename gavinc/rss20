@@ -63,25 +63,27 @@ sub _load_templates {
 
   $blosxom::template{$flavour}{'date'} = "\n";
 
-  $blosxom::template{$flavour}{'head'} = <<'HEAD';
-<?xml version="1.0" encoding="$blog_encoding"?>
+  $blosxom::template{$flavour}{'head'} = <<HEAD;
+<?xml version="1.0" encoding="$blosxom::blog_encoding"?>
 <rss version="2.0"
     xmlns:dc="http://purl.org/dc/elements/1.1/"
     xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
     xmlns:admin="http://webns.net/mvcb/"
+    xmlns:atom="http://www.w3.org/2005/Atom"
     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
     xmlns:content="http://purl.org/rss/1.0/modules/content/">
 
     <channel>
-        <title>$blog_title</title>
-        <link>$url</link>
-        <description>$blog_description</description>
-        <dc:date>$lastmodified2::latest_iso8601</dc:date>
-        <dc:language>$blog_language</dc:language>
+        <title>$blosxom::blog_title</title>
+        <link>$blosxom::url</link>
+        <description>$blosxom::blog_description</description>
+        <dc:date>\$lastmodified2::latest_iso8601</dc:date>
+        <dc:language>$blosxom::blog_language</dc:language>
         <dc:creator>mailto:$rss20::author_email</dc:creator>
         <dc:rights>$rss20::copyright</dc:rights>
         <admin:generatorAgent rdf:resource="$rss20::generator_url" />
         <admin:errorReportsTo rdf:resource="mailto:$rss20::error_email" />
+        <atom:link href="$blosxom::url$ENV{PATH_INFO}" rel="self" type="application/rss+xml" />
         <sy:updatePeriod>hourly</sy:updatePeriod>
         <sy:updateFrequency>1</sy:updateFrequency>
         <sy:updateBase>2000-01-01T12:00+00:00</sy:updateBase>
