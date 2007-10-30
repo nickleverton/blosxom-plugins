@@ -1,6 +1,6 @@
 # Blosxom Plugin: entries_timestamp
 # Author(s): Gavin Carr <gavin@openfusion.com.au>
-# Version: 0.001000
+# Version: 0.002000
 # Documentation: See the bottom of this file or type: perldoc entries_timestamp
 
 package entries_timestamp;
@@ -12,7 +12,7 @@ use Data::Dumper;
 use Time::Local;
 use CGI ();
 
-#use Blosxom::Debug debug_level => 1;
+#use Blosxom::Debug debug_level => 2;
 
 # --- Configurable variables -----
 
@@ -35,7 +35,7 @@ my $reindex_password = 'abracad';    # CHANGEME!
 
 my $q = CGI->new;
 
-use vars qw($VAR1 $VAR2 $VAR3);
+use vars qw($TS_MACHINE $TS_HUMAN $SYMLINKS $VAR1 $VAR2 $VAR3);
 
 sub start { 1 }
 
@@ -47,16 +47,28 @@ sub entries {
     if ( open ENTRIES, "$meta_dir/$entries_index" ) {
       my $index = join '', <ENTRIES>;
       close ENTRIES;
-      if ( $index =~ m/\$VAR1 = \{/ ) {
+      if ( $index =~ m/\$(TS_\w+|VAR1) = \{/ ) {
         eval $index;
         if ( $@ ) {
           warn "(entries_timestamp) eval of $entries_index failed: $@";
           return;
         }
         else {
-          %files_ts = %$VAR1;
-          %files_ts_str = %$VAR2 if keys %$VAR2;
-          %files_symlinks = %$VAR3 if keys %$VAR3;
+          if ($TS_MACHINE && keys %$TS_MACHINE) {
+            %files_ts = %$TS_MACHINE;
+          } elsif ($VAR1 && keys %$VAR1) {
+            %files_ts = %$VAR1;
+          }
+          if ($TS_HUMAN && keys %$TS_HUMAN) {
+            %files_ts_str = %$TS_HUMAN;
+          } elsif ($VAR2 && keys %$VAR2) {
+            %files_ts_str = %$VAR2;
+          }
+          if ($SYMLINKS && keys %$SYMLINKS) {
+            %files_symlinks = %$SYMLINKS;
+          } elsif ($VAR3 && keys %$VAR3) {
+            %files_symlinks = %$VAR3;
+          }
         }
       } 
     }
@@ -176,7 +188,8 @@ sub entries {
     if ( $index_mods ) {
       # debug(1, "index_mods $index_mods, saving \%files to $meta_dir/$entries_index");
       if ( open ENTRIES, "> $meta_dir/$entries_index" ) {
-        print ENTRIES Dumper \%files_ts, \%files_ts_str, \%files_symlinks;
+        print ENTRIES Data::Dumper->Dump([ \%files_ts_str, \%files_ts, \%files_symlinks ],
+          [ qw(TS_HUMAN TS_MACHINE SYMLINKS) ] );
         close ENTRIES;
       } 
       else {
