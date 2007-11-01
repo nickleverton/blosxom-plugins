@@ -50,13 +50,52 @@ $generator_url = "http://blosxom.sourceforge.net/?v=$blosxom::version";
 
 $error_email ||= $author_email;
 
+# Escape <, >, and & to hex-encoded entities for max compatibility in text elements
+# See http://www.rssboard.org/rss-profile#data-types-characterdata
+my %escape_text = (
+  '<' => '&#x3C;',
+  '>' => '&#x3E;',
+  '&' => '&#x26;',
+);
+my $escape_text_re = join '|' => keys %escape_text;
+
+# Escape <, >, and & to standard html-encoded entities for in html elements
+my %escape_html = (
+  '<' => '&lt;',
+  '>' => '&gt;',
+  '&' => '&amp;',
+);
+my $escape_html_re = join '|' => keys %escape_html;
+
 sub start { 
   _load_templates();
+}
 
-  1;
+sub story {
+  my ($pkg, $path, $filename, $story_ref, $title_ref, $body_ref) = @_;
+
+  # Don't double-encode if someone else has already done it
+  return unless $blosxom::encode_xml_entities;
+
+  # Encode and reset encode_xml_entities flag
+  $$title_ref = _escape_text( $$title_ref );
+  $$body_ref =  _escape_html( $$body_ref );
+  $blosxom::encode_xml_entities = 0;
 }
 
 # --- Private subroutines
+
+sub _escape_text {
+  my ($text) = @_;
+  $text =~ s/($escape_text_re)/$escape_text{$1}/g;
+  return $text;
+}
+
+sub _escape_html {
+  my ($html) = @_;
+  $html =~ s/($escape_html_re)/$escape_html{$1}/g;
+  return $html;
+}
 
 sub _load_templates {
   $blosxom::template{$flavour}{'content_type'} = 'text/xml; charset=$blog_encoding';
@@ -105,6 +144,8 @@ STORY
     </channel>                                    
 </rss>  
 FOOT
+
+  1;
 }
 
 
