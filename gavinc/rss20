@@ -74,12 +74,15 @@ sub start {
 sub story {
   my ($pkg, $path, $filename, $story_ref, $title_ref, $body_ref) = @_;
 
+  # Ignore flavours other than ours
+  return unless $blosxom::flavour eq $flavour;
+
   # Don't double-encode if someone else has already done it
   return unless $blosxom::encode_xml_entities;
 
   # Encode and reset encode_xml_entities flag
   $$title_ref = _escape_text( $$title_ref );
-  $$body_ref =  _escape_html( $$body_ref );
+  $$body_ref  = _escape_html( $$body_ref );
   $blosxom::encode_xml_entities = 0;
 }
 
