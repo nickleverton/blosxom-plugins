@@ -1,0 +1,160 @@
+# Blosxom Plugin: tagcloud
+# Author(s): Gavin Carr <gavin@openfusion.com.au>
+# Version: 0.002000
+# Documentation: See the bottom of this file or type: perldoc tagcloud
+
+package tagcloud;
+
+use strict;
+use vars qw(%config $cloud);
+
+# Uncomment next line to enable debug output (don't uncomment debug() lines)
+#use Blosxom::Debug debug_level => 1;
+
+# --- Configuration defaults -----
+
+%config = (
+
+  # tagcloud requires a hashref containing 'tag => count' pairs
+  tag_hashref           => $tags::tag_counts,
+
+  # Formatting options
+  tagcloud_prefix       => qq(<p class="tagcloud">\n),
+  tagcloud_suffix       => qq(</p>\n),
+  show_tag_no           => 0,
+  min_tag_no            => 2,
+  min_size              => 75,
+  max_size              => 200,
+  entry_type            => 'posting',
+
+  # Tags to omit from tagcloud
+  tagcloud_blacklist => [ 'Now Playing' ],
+
+);
+
+# ---------------------------------
+
+my %tagcloud_blacklist = map { $_ => 1 } @{$config{tagcloud_blacklist}};
+
+$cloud = '';
+
+sub start {
+    eval { $config{tag_hashref} }
+        or warn "[tagcloud] tag_hashref not set - skipping" 
+            and return 0;
+    1;
+}
+
+sub story {
+    my $tag_hashref = $config{tag_hashref};
+    return unless keys %$tag_hashref;
+ 
+    my %tags = ();
+    my $min = undef;
+    my $max = 1;
+    for (keys %$tag_hashref) {
+        next if exists $tagcloud_blacklist{ $_ };
+        next if $tag_hashref->{$_} < $config{min_tag_no};
+        $tags{$_} = $tag_hashref->{$_};
+        $min = $tag_hashref->{$_} if $min > $tag_hashref->{$_} || ! $min;
+        $max = $tag_hashref->{$_} if $max < $tag_hashref->{$_};
+    }
+    return unless keys %tags;
+
+    my $diff = $max - $min;
+
+    my @tagcloud = ();
+    for my $tag (sort { lc $a cmp lc $b } keys %tags) {
+        my $label = $tag;
+        $label .= " ($tags{$tag})" if $config{show_tag_no};
+        my $url_tag = _url_escape($tag);
+        my $url = "$blosxom::url/tags/$url_tag";
+        my $plural = $tags{$tag} == 1 ? '' : 's';
+        my $title = sprintf "%s %s%s tagged", $tags{$tag}, $config{entry_type}, $plural;
+        my $tag_percent = int($config{min_size} + 
+            ((($config{max_size}-$config{min_size})/$diff) * ($tags{$tag}-$min+1)));
+        my $style = 'white-space: nowrap;';
+        $style .= qq(font-size: $tag_percent%;") if $diff;
+        push @tagcloud, qq(<a href="$url" rel="tag" title="$title" style="$style">$label</a>);
+    }
+
+    $cloud = sprintf "%s%s%s", 
+        $config{tagcloud_prefix}, join(', ', @tagcloud), $config{tagcloud_suffix};
+}
+
+sub _url_escape {
+    my $s = shift;
+    $s =~ s/[^0-9A-Za-z,.:]/sprintf('%%%02X', ord($&))/seg;
+    return $s;
+}
+
+
+1;
+
+__END__
+
+=head1 NAME
+
+tagcloud - blosxom plugin to set a $tagcloud::cloud template variable
+given an arbitrary set of tags and counts
+
+
+=head1 DESCRIPTION
+
+tagcloud is a blosxom plugin which sets a $tagcloud::cloud template
+variable given an arbitrary set of tags and counts. It was developed
+for use with the L<tags> plugin.
+
+
+=head1 USAGE
+
+tagcloud should be loaded after the plugin that is generating its tag
+set.
+
+
+=head1 SEE ALSO
+
+L<tags>
+
+Blosxom: http://blosxom.sourceforge.net/
+
+
+=head1 ACKNOWLEDGEMENTS
+
+Portions of this plugin were swiped verbatim from xtaran's excellent 
+L<tagging> plugin.
+
+
+=head1 AUTHOR
+
+Gavin Carr <gavin@openfusion.com.au>, http://www.openfusion.net/
+
+
+=head1 LICENSE
+
+Copyright 2007, Gavin Carr.
+
+This plugin is licensed under the same terms as blosxom itself i.e.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+=cut
+
+# vim:ft=perl:sw=4
+

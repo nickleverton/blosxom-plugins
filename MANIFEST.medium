@@ -72,8 +72,11 @@ sort_by_path
 sort_reverse
 static_file
 storydate
+storytags
 storytitle
+tagcloud
 tagging
+tags
 textile2
 textile2.README
 theme
