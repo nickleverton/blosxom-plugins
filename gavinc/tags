@@ -55,8 +55,18 @@ sub entries {
     # debug(3, "entries, path_info $path_info");
 
     if ($path_info =~ m!^$tagroot/(.*)!) {
+        $blosxom::flavour = '';
         my $taglist = $1;
         # debug(3, "entries, path_info matches tagroot (taglist $taglist)");
+
+        # Allow flavours appended to tags after a slash
+        # Dot-flavour versions are problematic, because tags can include dot e.g. web2.0
+        if ($taglist =~ m! /(\w+)$ !x) {
+            $blosxom::flavour = $1;
+            $taglist =~ s! /$blosxom::flavour$ !!x;
+        }
+
+        # Split individual tags out of taglist
         if ($taglist =~ m/;/) {
             @path_tags = split /\s*;\s*/, $taglist;
             $path_tags_op = ';';
@@ -67,6 +77,7 @@ sub entries {
         }
         # If $path_info matches $tagroot it's a virtual path, so reset
         $blosxom::path_info = '';
+        $blosxom::flavour ||= $blosxom::default_flavour;
     }
 
     return 0;
@@ -210,6 +221,25 @@ AND semantics.
 OR semantics.
 
 =back
+
+Tag filtering also supports a trailing flavour after the taglist,
+separated by a slash e.g.
+
+    /tags/dogs/html
+    /tags/dogs,cats/rss
+    /tags/dogs;cats;pets/atom
+
+Note that this is different to L<tagging>, which treats trailing
+components as additional tags.
+
+At this point L<tags> don't support dot-flavour paths e.g.
+
+    /tags/mysql.html
+
+The problem with this is that tags can include dots, so it's
+ambiguous how to parse C</tags/web2.0>, for instance. If you'd
+like this supported and have suggestions about how to handle
+the ambiguities, please get in touch.
 
 =head1 USAGE
 
