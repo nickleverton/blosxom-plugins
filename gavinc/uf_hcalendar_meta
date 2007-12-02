@@ -1,0 +1,353 @@
+# Blosxom Plugin: uf_hcalendar_meta
+# Author(s): Gavin Carr <gavin@openfusion.com.au>
+# Version: 0.001000
+# Documentation: 'perldoc uf_hcalendar_meta'
+
+package uf_hcalendar_meta;
+
+use strict;
+
+# Uncomment next line to enable debug output (don't uncomment debug() lines)
+#use Blosxom::Debug debug_level => 1;
+
+# --- Configurable variables -----
+
+my %config = (
+
+  # Extra CSS classes to add to the microformat container e.g. to turn display off
+  class => '',
+  #class => 'nodisplay',
+
+  # Whether to automatically add microformat to story bodies. If not set, 
+  # you must explicitly add $uf_adr_meta::adr to a template somewhere.
+  auto_append_to_body => 1,
+
+  # What markup style to use for your adr, if auto-appending. 
+  # 3 styles are currently defined: 
+  # 'div-span' uses a 'div' elt for the container, and 'span' elements for the fields
+  # 'ul' uses a 'ul' list for the container, and 'li' elements for the fields
+  # 'dl' uses a 'dl' list for the container, 'dt' elements for field names, and 
+  #    'dd' elements for the fields themselves
+  #style => 'div-span',
+  #style => 'ul',
+  style => 'dl',
+
+);
+
+# --------------------------------
+
+use vars qw($hcalendar);
+
+my @required = qw(summary dtstart);
+my @optional = qw(dtend duration description location url uid);
+my %label = (
+  dtstart   => 'DtStart',
+  dtend     => 'DtEnd',
+  uid       => 'UID',
+  url       => 'URL',
+);
+
+$config{style} = 'div-span' unless $config{style} eq 'ul' or $config{style} eq 'dl';
+
+sub start { 1 }
+
+# Return the first existing metadata item key and value given a list of keys
+sub _get_meta {
+    for my $attr ( @_ ) {
+        my $meta_attr = $attr;
+        $meta_attr =~ s/-/_/g;
+        my $value = $blosxom::meta{$meta_attr};
+        $value = eval "\$meta::$attr" unless defined $value;
+        return wantarray ? ( $attr, $value ) : $value if defined $value;
+    }
+    return wantarray ? () : undef;
+}
+
+sub _format_date {
+    my ($date) = @_;
+    my $iso_date = $date;
+    $iso_date =~ s/^(\d{4}-\d{2}-\d{2})(\s+)/$1T/;
+    return $iso_date;  
+}
+
+sub _format_duration {
+    my ($duration) = @_;
+    my $iso_duration = uc $duration;
+
+    # Trim
+    $iso_duration =~ s/^\s+//;
+    $iso_duration =~ s/\s+$//;
+
+    # If $iso_duration begins with an H, M, or S element, and no P, insert PT
+    $iso_duration =~ s/^(\d+)([HMS])/PT$1$2/;
+
+    # Otherwise, if $iso_duration begins without a P, insert one
+    $iso_duration =~ s/^(\d)/P$1/;
+
+    # Replace date-time whitespace with 'T'
+    $iso_duration =~ s/([PYMD])\s+/$1T/;
+
+    return $iso_duration;
+}
+
+sub story {
+    my ($pkg, $path, $filename, $story_ref, $title_ref, $body_ref) = @_;
+
+    my %meta = ();
+    for (@required, @optional) {
+      $meta{$_} = _get_meta($_);
+    }
+    my @req_count = map { $meta{$_} ? 1 : () } @required;
+    return 1 unless @req_count == @required;
+
+    my $story_style = _get_meta( 'hcal_style' ) || $config{style};
+    my $ctag = $story_style eq 'div-span' ? 'div' : $story_style;
+    my $etag = $story_style eq 'div-span' ? 'span' :
+               $story_style eq 'ul' ? 'li' : 'dd';
+
+    $hcalendar = '';
+    my $container_classes = 'vevent';
+    if (my $meta_class = _get_meta('hcal_class')) {
+      $container_classes .= " $meta_class";
+    }
+    else {
+      $container_classes .= " $config{class}" if $config{class};
+    }
+    $hcalendar .= qq(<$ctag class="$container_classes">\n);
+    for (@required, @optional) {
+        next unless defined $meta{$_};
+        $hcalendar .= sprintf qq(<dt>%s</dt>), $label{$_} || ucfirst $_ 
+            if $story_style eq 'dl';
+        if ($_ eq 'dtstart' || $_ eq 'dtend') {
+            my $iso_date = _format_date($meta{$_});
+            $hcalendar .= qq(<$etag><abbr class="$_" title="$iso_date">$meta{$_}</abbr></$etag>\n);
+        }
+        elsif ($_ eq 'duration') {
+            my $iso_duration = _format_duration($meta{$_});
+            $hcalendar .= qq(<$etag><abbr class="$_" title="$iso_duration">$meta{$_}</abbr></$etag>\n);
+        }
+        elsif ($_ eq 'url') {
+            $hcalendar .= qq(<$etag><a class="$_" href="$meta{url}">$meta{url}</a></$etag>\n);
+        }
+        else {
+            $hcalendar .= qq(<$etag class="$_">$meta{$_}</$etag>\n);
+        }
+    }
+    $hcalendar .= qq(</$ctag>\n);
+    # debug(1, "uf_hcalendar_meta: $hcalendar\n");
+
+    my $autoappend = _get_meta( 'hcal_autoappend' );
+    $autoappend = $config{auto_append_to_body} unless defined $autoappend;
+    return 1 unless $autoappend;
+
+    $$body_ref .= "\n\n$hcalendar\n\n";
+
+    return 1;
+}
+
+1;
+
+__END__
+
+=head1 NAME
+
+uf_hcalendar_meta - plugin to create an 'hcalendar' microformat tag from 
+post metadata
+
+=head1 DESCRIPTION
+
+uf_hcalendar_meta is a plugin to create an 'hcalendar' microformat tag 
+from metadata in your post. The microformat tag is created in the 
+$uf_hcalendar_meta::hcalendar variable for use in templates or by other 
+plugins, or if the $auto_append_to_body flag is set (it is by default), 
+uf_hcalendar_meta will append the tag to your story body automatically.
+
+=head2 REQUIRED METADATA ITEMS
+
+(If using the 'metamail/metadir/metafile' plugins, metadata items
+are matched case insensitively.)
+
+=over 4
+
+=item summary
+
+The summary or title of the event.
+
+=item dtstart
+
+The start date/time of the event. 
+
+Must be given as an ISO 8601 calendar date, in the form 
+YYYY-MM-DDTHH:MM:SS or YYYYMMDDTHHMMSS, with an optional trailing 
+timezone of the form /[+-]HH(:?MM)?/. Any number of rightmost time 
+elements may be omitted. Hours must be given in 24-hour time.
+
+For convenience, this plugin allows the 'T' marker to be replaced by 
+whitespace.
+
+The following are all valid dtstart values, for example:
+
+=over 4
+
+=item 2007-09-01T19:30:00+10:00
+
+=item 20070901T193000-10
+
+=item 2007-09-01
+
+=item 2007-09-01 17:45
+
+=back
+
+=back
+
+And one of:
+
+=over 4
+
+=item dtend
+
+The end date/time of the event. Must be an ISO 8601 calendar date 
+as defined for dtstart above.
+
+=item duration
+
+The duration of the event. This may be an ISO 8601 duration, of the
+form PnnYnnMnnDTnnHnnMnnS e.g. "P3Y6M4DT12H30M0S". Elements may be
+omitted if their duration is zero. The smallest value used may also 
+have a decimal fraction, as in "P0.5Y" to indicate half a year.
+
+For convenience, this plugin interprets the units case-insensitively,
+allows the 'P' and 'T' markers to be omitted, and also accepts 
+whitespace in the place of the 'T' time marker. 
+
+Note that because months and minutes use the same signifier, there is
+ambiguity about the meaning of 'P1M' and '1M'. This plugin interprets
+'M' values as follows:
+
+=over 4
+
+=item 1M
+
+Interpreted as minutes, since this is the most common use case, and 
+since ISO 8601 really requires a leading 'P' signifier.
+
+=item P1M
+
+Interpreted as months, following ISO 8601.
+
+=item PT1M
+
+Interpreted as minutes, following ISO 8601.
+
+=back
+
+=back
+
+
+=head2 OPTIONAL METADATA ITEMS
+
+=over 4
+
+=item description
+
+A description of the event, sometimes longer than the summary.
+
+=item dtend
+
+The end date/time of the event, as discussed above.
+
+=item duration
+
+The duration of the event, as discussed above.
+
+=item location
+
+A string describing the location of the event.
+
+=item url
+
+A canonical URL for the event.
+
+=item uid
+
+A unique identifier for this event. Apparently required by some
+versions of Microsoft Outlook.
+
+=back
+
+=head2 Config Elements
+
+uf_hcalendar_meta also supports a couple of config elements that can be used to
+override plugin config data on a per-story basis:
+
+=over 4
+
+=item HCal-Class (metamail) / hcal_class (meta)
+
+This class (or list of classes) is appended to the class list applied to the
+top-level hcalendar element in the rendered hcalendar i.e. it overrides the 
+'class' config variable. 
+
+=item HCal-Autoappend (metamail) / hcal_autoappend (meta)
+
+This is a flag (0 or 1) indicating whether the rendered hcalendar should be 
+automatically appended to the story body. It overrides the 'auto_append_to_body'
+config variable.
+
+=item HCal-Style (metamail) / hcal_style (meta)
+
+One of the following styles: 'div-span', 'ul', 'dl', used to render the hcalendar. 
+It overrides the 'style' config variable.
+
+=back
+
+=head1 USAGE
+
+uf_hcalendar_meta should be loaded after the meta plugins (meta
+itself, or the metaclear/metamail/metadir/metafile family).
+
+=head1 SEE ALSO
+
+Microformats.org: http://www.microformats.org/,
+http://microformats.org/wiki/hcalendar.
+
+Blosxom: http://blosxom.sourceforge.net/
+
+=head1 BUGS
+
+Only the most common hcalendar attributes have been implemented
+so far. Please let me know if you'd like something not available 
+yet.
+
+=head1 AUTHOR
+
+Gavin Carr <gavin@openfusion.com.au>, http://www.openfusion.net/
+
+=head1 LICENSE
+
+Copyright 2007, Gavin Carr.
+
+This plugin is licensed under the same terms as blosxom itself i.e.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+=cut
+
+# vim:ft=perl

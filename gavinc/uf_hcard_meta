@@ -1,0 +1,449 @@
+# Blosxom Plugin: uf_hcard_meta
+# Author(s): Gavin Carr <gavin@openfusion.com.au>
+# Version: 0.001000
+# Documentation: 'perldoc uf_hcard_meta'
+
+package uf_hcard_meta;
+
+use strict;
+
+# Uncomment next line to enable debug output (don't uncomment debug() lines)
+#use Blosxom::Debug debug_level => 2;
+
+# --- Configuration defaults -----
+
+my %config = (
+
+  # Extra CSS classes to add to the microformat container e.g. to turn display off
+  class => '',
+  #class => 'nodisplay',
+
+  # Whether to automatically add microformat to story bodies. If not set, 
+  # you must explicitly add $uf_adr_meta::adr to a template somewhere.
+  auto_append_to_body => 1,
+
+  # What markup style to use for your adr, if auto-appending. 
+  # 3 styles are currently defined: 
+  # 'div-span' uses a 'div' elt for the container, and 'span' elements for the fields
+  # 'ul' uses a 'ul' list for the container, and 'li' elements for the fields
+  # 'dl' uses a 'dl' list for the container, 'dt' elements for field names, and 
+  #    'dd' elements for the fields themselves
+  #style => 'div-span',
+  #style => 'ul',
+  style => 'dl',
+
+);
+
+# --------------------------------
+
+use vars qw($hcard);
+
+# Official hcard attributes
+my @req_attr = qw(fn);
+my %opt_attr = (
+    'adr'         => [ qw(address-type post-office-box extended-address street-address
+                          locality region postal-code country-name) ],
+    'agent'       => 1,
+    'bday'        => 1,
+    'email'       => 1,
+    'geo'         => [ qw(latitude longitude) ],
+    'key'         => 1,
+    'label'       => 1,
+    'logo'        => 1,
+    'mailer'      => 1,
+    'n'           => [ qw(honorific-prefix given-name additional-name family-name honorific-suffix) ],
+    'nickname'    => 1,
+    'note'        => 1,
+    'org'         => [ qw(organization-name organization-unit) ],
+    'photo'       => 1,
+    'rev'         => 1,
+    'role'        => 1,
+    'sort-string' => 1,
+    'sound'       => 1,
+    'tel'         => 1,
+    'tz'          => 1,
+    'uid'         => 1,
+    'url'         => 1,
+);
+  
+# Attribute aliases
+my %alias = (
+    'fn'                    => [ 'name' ],
+    'email-value'           => [ 'email' ],
+    'tel'                   => [ qw(telephone phone) ],
+    'organization-name'     => [ qw(org organisation organization) ],
+    'post-office-box'       => [ 'pobox' ],
+    'street-address'        => [ 'street' ],
+    'locality'              => [ 'suburb', 'city' ],
+    'region'                => [ 'state' ],
+    'postal-code'           => [ 'postcode' ],
+    'country-name'          => [ 'country' ],
+);
+my %attr_types = map { $_ => 1 } qw(tel);
+my %attr_types_standalone = (
+    tel                     => { map { $_ => 1 } qw(fax cell mobile) },
+);
+my %alias_types = (
+    mobile                  => 'cell',
+);
+
+$config{style} = 'div-span' unless $config{style} eq 'ul' or $config{style} eq 'dl';
+
+sub start { 1 }
+
+# Return the first existing metadata item key and value given a list of keys
+sub _get_meta {
+    for my $attr ( @_ ) {
+        my $meta_attr = $attr;
+        $meta_attr =~ s/-/_/g;
+        my $value = $blosxom::meta{$meta_attr};
+        $value = eval "\$meta::$attr" unless defined $value;
+        return wantarray ? ( $attr, $value ) : $value if defined $value;
+    }
+    return wantarray ? () : undef;
+}
+
+sub _add_attr {
+    my ($hcard, $attr, $value, $style, $parent_attr, $parent_started, $type) = @_;
+
+    # Start parent if set and not started
+    if ($parent_attr && (! defined $parent_started || ! $$parent_started)) {
+        $$hcard .= qq(<span class="$parent_attr">\n);
+        $$parent_started = 1 if defined $parent_started;
+    }
+
+    # Append hcard output
+    my $label = '';
+    if ($type) {
+        $label = join ', ', map { qq(<span class="type">$_</span>) } split /[_\W]+/, $type;
+    }
+    elsif ($attr =~ m/^(\w+)-(value)$/) {
+        $label = $1;
+        $attr = $2;
+    } 
+    elsif ($style eq 'dl') {
+        $label = $attr;
+        $label =~ s/\s+/-/g;
+    }
+    my $type_string;
+    if ($style eq 'dl') {
+        $$hcard .= qq(<dt>$label</dt>);
+        $type_string = '';
+    }
+    elsif ($label) {
+        $type_string = "($label) ";
+    }
+    my $etag = $style eq 'div-span' ? 'span' : 
+               $style eq 'ul' ? 'li' : 'dd';
+    $$hcard .= qq(<$etag class="$attr">$type_string$value</$etag>\n);
+
+    # Close parent unless we have a $parent_started flag to set
+    $$hcard .= qq(</span>\n) if $parent_attr && ! defined $parent_started;
+}
+
+sub story {
+    my ($pkg, $path, $filename, $story_ref, $title_ref, $body_ref) = @_;
+
+    # Skip unless all required attributes are set
+    for (@req_attr) {
+        my $value = _get_meta($_, $alias{$_} ? @{$alias{$_}} : ());
+        unless ($value) {
+            # debug(2, "No name attribute found in $path/$filename - skipping post");
+            return 1;
+        }
+    }
+
+    my $story_style = _get_meta( 'hcard_style' ) || $config{style};
+    my $ctag = $story_style eq 'div-span' ? 'div' : $story_style;
+
+    $hcard = '';
+    my $container_classes = 'vcard';
+    if (my $meta_class = _get_meta('hcard_class')) {
+      $container_classes .= " $meta_class";
+    }
+    else {
+      $container_classes .= " $config{class}" if $config{class};
+    }
+    $hcard .= qq(<$ctag class="$container_classes">\n);
+    for my $attr ( @req_attr ) {
+        my $value = _get_meta( $attr, $alias{$attr} ? @{$alias{$attr}} : () );
+        _add_attr(\$hcard, $attr, $value, $story_style) if $value;
+    }
+    for my $attr ( sort keys %opt_attr ) {
+        # Allow nested attributes
+        if (ref $opt_attr{$attr}) {
+            my $parent_attr = $attr;
+            my $parent_started = 0;
+            for $attr ( @{ $opt_attr{$parent_attr} } ) {
+                my $value = _get_meta( $attr, $alias{$attr} ? @{$alias{$attr}} : () );
+                _add_attr(\$hcard, $attr, $value, $story_style, $parent_attr, \$parent_started)
+                    if $value;
+            }
+            if ($parent_started) {
+                $hcard .= qq(</span>\n);
+                next;
+            }
+        }
+    
+        # Allow bare attributes and aliases
+        my $value = _get_meta( $attr, $alias{$attr} ? @{$alias{$attr}} : () );
+        _add_attr(\$hcard, $attr, $value, $story_style) if $value;
+
+        # Allow typed attributes 
+        if ($attr_types{ $attr }) {
+            # TODO: need to support $meta package variables here too
+            for my $meta (sort keys %blosxom::meta) {
+                # Search for all metadata beginning with $attr or aliases
+                for my $a ( $attr, $alias{$attr} ? @{$alias{$attr}} : () ) {
+                    if (lc $meta =~ m/^$a[^a-z]+(\w+)$/) {
+                        _add_attr(\$hcard, 'value', $blosxom::meta{ $meta }, $story_style, $attr, undef, $1);
+                    }
+                }
+            }
+
+            # Allow standalone types
+            for my $type ( sort keys %{ $attr_types_standalone{ $attr } } ) {
+                if (my $value = _get_meta( $type )) {
+                    _add_attr(\$hcard, 'value', $value, $story_style, $attr, undef, 
+                              $alias_types{ $type } || $type);
+                }
+
+            }
+        }
+    }
+    $hcard .= qq(</$ctag>\n);
+    # debug(2, "hcard $hcard\n");
+
+    my $autoappend = _get_meta( 'hcard_autoappend' );
+    $autoappend = $config{auto_append_to_body} unless defined $autoappend;
+    return 1 unless $autoappend;
+
+    $$body_ref .= "\n\n$hcard\n\n";
+
+    return 1;
+}
+
+1;
+
+__END__
+
+=head1 NAME
+
+uf_hcard_meta - plugin to create an 'hcard' microformat tag from post 
+metadata
+
+=head1 DESCRIPTION
+
+uf_hcard_meta is a plugin to create an 'hcard' microformat tag from 
+metadata in your post. The microformat tag is created in the 
+$uf_hcard_meta::hcard story variable for use in templates or by other 
+plugins, or if the 'auto_append_to_body' config variable is set (it is 
+by default), uf_hcard_meta will append the tag to your story body 
+automatically.
+
+The following metadata items are supported. By and large the official
+hcard attribute name is supported, and sometimes one or aliases 
+(labelled alt below) may also be supported. See the hcard definition at
+http://www.microformats.org/wiki/hcard for definitions and discussion
+of attributes and usage.
+
+=head2 REQUIRED METADATA ITEMS
+
+=over 4
+
+=item fn (alt: name) - full name
+
+=back
+
+=head2 OPTIONAL METADATA ITEMS
+
+=over 4
+
+=item address-type
+
+=item post-office-box (alt: pobox)
+
+=item extended-address 
+
+=item street-address (alt: street)
+
+=item locality (alt: suburb, city)
+
+=item region (alt: state)
+
+=item postal-code (alt: postcode)
+
+=item country-name (alt: country)
+
+=item agent
+
+=item bday
+
+=item cell (alt: mobile)
+
+=item email
+
+=item fax
+
+=item key
+
+=item label
+
+=item latitude
+
+=item longitude
+
+=item logo
+
+=item mailer
+
+=item honorific-prefix
+
+=item given-name
+
+=item additional-name
+
+=item family-name
+
+=item honorific-suffix
+
+=item nickname
+
+=item note
+
+=item organization-name (alt: org, organization, organisation)
+
+=item organization-unit
+
+=item photo
+
+=item rev
+
+=item role
+
+=item sort-string
+
+=item sound
+
+=item tel (alt: telephone, phone)
+
+And see also the Telephone Element Handling section below.
+
+=item tz
+
+=item uid
+
+=item uri
+
+=back
+
+=head2 Telephone Element Handling
+
+hcard telephone numbers may have type attributes, and because most people have
+multiple telephone numbers, uf_hcard_meta also supports decorating the 'tel' 
+element (or its aliases) with one or more hcard telephone types, just suffixed 
+on the end of the element and separated by hyphens or underscores. For instance, 
+all of the following are valid telephone number entries for uf_hcard_meta:
+
+    Tel: 02 8669 0001
+    Phone: 8669 0002
+    Fax: +612 8669 0003
+    Cell: 02 8669 0004
+    Mobile: 0401 8669 0005
+    Tel-Work: 123 456 7890
+    Phone-Work-Direct-Pref-Msg: +1 232 868 7123
+    Telephone-Home: 02 8669 0006
+
+=head2 Config Elements
+
+uf_hcard_meta also supports a couple of config elements that can be used to
+override plugin config data on a per-story basis:
+
+=over 4
+
+=item HCard-Class (metamail) / hcard_class (meta)
+
+This class (or list of classes) is appended to the class list applied to the
+top-level hcard element in the rendered hcard i.e. it overrides the 
+'class' config variable. 
+
+=item HCard-Autoappend (metamail) / hcard_autoappend (meta)
+
+This is a flag (0 or 1) indicating whether the rendered hcard should be 
+automatically appended to the story body. It overrides the 'auto_append_to_body'
+config variable.
+
+=item HCard-Style (metamail) / hcard_style (meta)
+
+One of the following styles: 'div-span', 'ul', 'dl', used to render the
+hcard. It overrides the 'style' config variable.
+
+=back
+
+=head1 EXAMPLES
+
+An simple example hcard for me:
+
+    Name:     Gavin Carr
+    Org:      Open Fusion
+    Role:     Chief Geek
+    Email:    gavin@openfusion.com.au
+    URL:      http://www.openfusion.net/
+    POBox:    PO Box 1222
+    Suburb:   Wahroonga
+    State:    NSW
+    Postcode: 2076
+    Country:  Australia
+
+=head1 USAGE
+
+uf_hcard_meta should be loaded after the meta plugins (meta
+itself, or the metaclear/metamail/metadir/metafile family).
+
+=head1 SEE ALSO
+
+Microformats.org: http://www.microformats.org/, http://microformats.org/wiki/hcard.
+
+Blosxom: http://blosxom.sourceforge.net/
+
+=head1 BUGS
+
+Probably, since hcards can be pretty horrendously complicated - please 
+report to the author. Also, this plugin is pretty alpha - I'm not sure 
+of quite a few of the interface elements, and would welcome input on how
+attributes etc. should be represented. 
+
+I also make no guarantees about backwards compatibility - future releases
+may break existing hcards, so use at your own risk.
+
+=head1 AUTHOR
+
+Gavin Carr <gavin@openfusion.com.au>, http://www.openfusion.net/
+
+=head1 LICENSE
+
+Copyright 2007, Gavin Carr.
+
+This plugin is licensed under the same terms as blosxom itself i.e.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+=cut
+
+# vim:ft=perl:sw=4

@@ -1,0 +1,143 @@
+# Blosxom Plugin: hcard
+# Author(s): Gavin Carr <gavin@openfusion.com.au>
+# Version: 0.001000
+# Documentation: 'perldoc hcard'
+# Requires: metaclear, metamail, uf_hcard_meta
+
+package hcard;
+
+use strict;
+use IO::File;
+
+# Uncomment next line to enable debug output (don't uncomment debug() lines)
+#use Blosxom::Debug debug_level => 1;
+
+# --- Configuration defaults -----
+
+my %config = (
+
+  # Where is the hcard metadata?
+  hcard_meta_file => "$blosxom::datadir/hcard.yml",
+
+);
+
+# --------------------------------
+
+use vars qw($hcard);
+$hcard = '';
+
+sub start {
+    # Check $hcard_meta_file exists
+    unless (-f $config{hcard_meta_file}) {
+        warn "(hcard) cannot find hcard_meta_file file '$config{hcard_meta_file}' - aborting\n";
+        return 0;
+    }
+    return 1;
+}
+
+sub skip {
+    my $hcard_fh = IO::File->new( $config{hcard_meta_file}, 'r' )
+        or warn "(hcard) cannot open hcard_meta_file file '$config{hcard_meta_file}': $! - aborting\n"
+            and return 0;
+    my @hcard_data = <$hcard_fh>;
+    my $hcard_title = $hcard_data[0];
+    chomp $hcard_title;
+    my $hcard_body = join '', @hcard_data[ 1 .. $#hcard_data ];
+    $hcard_fh->close;
+    # debug(1, "hcard_body: $hcard_body");
+
+    unless ($hcard_body) {
+        warn "(hcard) no data found in hcard_meta_file file '$config{hcard_meta_file}' - aborting\n";
+        return 0;
+    }
+  
+    # Fake story calls to metaclear, metamail and uf_hcard_meta to render the hcard
+    my @story_args = ( undef, undef, undef, undef, \$hcard_title, \$hcard_body );
+    metaclear::story( @story_args );
+    metamail::story( @story_args );
+    uf_hcard_meta::story( @story_args );
+
+    $hcard = $uf_hcard_meta::hcard;
+
+    return 0;
+}
+
+1;
+
+__END__
+
+=head1 NAME
+
+hcard - blosxom plugin to set a global $hcard::hcard variable for use in templates
+
+=head1 DESCRIPTION
+
+L<hcard> is a blosxom plugin to set a global $hcard::hcard variable for use in 
+templates. It is intended to allow you to set up a global hcard for yourself
+to be displayed somewhere in your blog template.
+
+To use, simply define the set of hcard data you want to use in the 'hcard_meta_file'
+file ($blosxom::datadir/hcard.yml, by default).
+
+=head1 EXAMPLES
+
+Here's an example hcard.yml for me:
+
+    Name: Gavin Carr
+    Organisation: Open Fusion
+    Role: Chief Geek
+    Email: gavin@openfusion.com.au
+    URL: http://www.openfusion.net/
+    Suburb: Wahroonga
+    State: NSW
+    Postcode: 2076
+    Country: Australia
+    Latitude: -33.717718
+    Longitude: 151.117158
+    HCard-Class: nodisplay
+    HCard-Style: div-span
+
+=head1 USAGE
+
+L<hcard> requires the L<uf_hcard_meta>, L<metaclear>, and L<metamail> plugins, 
+but has no particular ordering requirements with respect to them.
+
+=head1 SEE ALSO
+
+L<uf_hcard_meta>, L<metaclear>, L<metamail>.
+
+Microformats.org: http://www.microformats.org/, http://microformats.org/wiki/hcard.
+
+Blosxom: http://blosxom.sourceforge.net/
+
+=head1 AUTHOR
+
+Gavin Carr <gavin@openfusion.com.au>, http://www.openfusion.net/
+
+=head1 LICENSE
+
+Copyright 2007, Gavin Carr.
+
+This plugin is licensed under the same terms as blosxom itself i.e.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+=cut
+
+# vim:ft=perl:sw=4
