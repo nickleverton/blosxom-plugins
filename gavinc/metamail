@@ -23,6 +23,7 @@ my @keep_in_body_headers = qw(Tags);
 my $unfold_headers = 1;
 
 # --------------------------------
+# __END_CONFIG__
 
 sub start { 1 };
 

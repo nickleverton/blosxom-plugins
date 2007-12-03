@@ -2,7 +2,7 @@
 # Author(s): Gavin Carr <gavin@openfusion.com.au>
 # (based on work by Frank Hecker <hecker@hecker.org>
 #  and Bob Schumaker <cobblers@pobox.com>)
-# Version: 0.001000
+# Version: 0.002000
 # Documentation: See the bottom of this file or type: perldoc storydate
 
 package storydate;
@@ -20,6 +20,7 @@ use File::stat;
 my @strftime_modules = qw(Time::Piece Date::Format POSIX);
 
 # ---------------------------------
+# __END_CONFIG__
 
 # Package variables
 use vars qw(
@@ -29,11 +30,13 @@ use vars qw(
   $story_mtime_iso8601
   $now_rfc822
   $now_iso8601
+  $latest_rfc822
+  $latest_iso8601
   %strftime_formats
 );
 
 %strftime_formats = (
-    rfc822      => "%a, %d %b %Y  %T %z",
+    rfc822      => "%a, %d %b %Y %T %z",
     # ISO 8601 format (localtime, including time zone offset)
     # Format is YYYY-MM-DDThh:mm:ssTZD per http://www.w3.org/TR/NOTE-datetime
     iso8601     => "%Y-%m-%dT%T%z",
@@ -46,6 +49,22 @@ sub start {
     # debug(1, "now_rfc822: $now_rfc822");
     # debug(1, "now_iso8601: $now_iso8601");
     1;
+}
+
+sub filter {
+    my ($pkg, $files, $others) = @_;
+
+    # Find the latest publish date in our stories
+    my $latest_ts = 0;
+    for (values %$files) {
+	  $latest_ts = $_ if $_ > $latest_ts;
+    }
+
+    # Format the 'latest' variables
+    $latest_rfc822  = format_date('rfc822', $latest_ts);
+    $latest_iso8601 = format_date('iso8601', $latest_ts);
+
+    return 1;
 }
 
 sub story {
@@ -205,6 +224,14 @@ The current time in RFC822 format.
 =item $now_iso8601
 
 The current time in ISO8601 format.
+
+=item $latest_rfc822
+
+The latest story publication date, in RFC822 format.
+
+=item $latest_iso8601
+
+The latest story publication date, in ISO8601 format.
 
 =back
 

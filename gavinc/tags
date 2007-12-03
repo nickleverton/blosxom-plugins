@@ -25,6 +25,7 @@ my $tag_header = 'Tags';
 my $tag_cache_file = "$blosxom::plugin_state_dir/tag_cache";
 
 # ---------------------------------
+# __END_CONFIG__
 
 $tag_cache = {};
 $tag_entries = {};

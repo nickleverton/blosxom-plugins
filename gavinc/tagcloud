@@ -33,6 +33,7 @@ use vars qw(%config $cloud);
 );
 
 # ---------------------------------
+# __END_CONFIG__
 
 my %tagcloud_blacklist = map { $_ => 1 } @{$config{tagcloud_blacklist}};
 

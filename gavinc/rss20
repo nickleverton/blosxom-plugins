@@ -1,21 +1,24 @@
 # Blosxom Plugin: rss20
 # Author(s): Gavin Carr <gavin@openfusion.com.au>
-# Version: 0.001002
-# Requires: storydate, lastmodified2
-# Suggests: absolute
-# Follows:  storydate, lastmodified2
+# Version: 0.002000
+# Requires: storydate
+# Suggests: absolute, storytags
+# Follows:  storydate
 
 package rss20;
 
 use strict;
+
 use vars qw(
   $flavour
   $author_email 
-  $error_email 
+  $author_name 
+  $webmaster_email 
   $permalink
   $trackback_link
   $copyright
-  $generator_url
+  $generator
+  $category_list
 );
 
 # --- Configuration variables -----
@@ -25,10 +28,18 @@ $flavour = 'rss';
 #$flavour = 'rss20';
 
 # What email address should be used as the default author email?
-$author_email = 'author@example.com';
+# Recommended format is 'email (name)', but bare emails or mailto emails are ok too
+$author_email = 'author@example.com (A. U. Thor)';
+
+# What name should be used as the default author name?
+# Define this only if you don't want to disclose an email address in $author_email.
+# It will be ignored if $author_email is set.
+$author_name = '';
 
 # What email address should feed errors be reported to?
-$error_email = '';
+# Recommended format is 'email (name)', but bare emails or mailto emails are ok too
+$webmaster_email = '';
+#$webmaster_email = 'webmaster@example.com (Web Master)';
 
 # What do your story permalinks look like?
 # This must be single-quoted, to defer evaluation; blosxom namespace applies
@@ -44,11 +55,15 @@ $trackback_link = '';
 $copyright = '';
 
 # Generator that produced this feed
-$generator_url = "http://blosxom.sourceforge.net/?v=$blosxom::version";
+$generator = "blosxom $blosxom::version";
 
 # --------------------------------
+# __END_CONFIG__
 
-$error_email ||= $author_email;
+$webmaster_email ||= $author_email;
+
+my $channel_indent = 8;
+my $item_indent = 12;
 
 # Escape <, >, and & to hex-encoded entities for max compatibility in text elements
 # See http://www.rssboard.org/rss-profile#data-types-characterdata
@@ -71,6 +86,7 @@ sub start {
   _load_templates();
 }
 
+my $do_encode = 0;
 sub story {
   my ($pkg, $path, $filename, $story_ref, $title_ref, $body_ref) = @_;
 
@@ -78,12 +94,24 @@ sub story {
   return unless $blosxom::flavour eq $flavour;
 
   # Don't double-encode if someone else has already done it
-  return unless $blosxom::encode_xml_entities;
+  return unless $do_encode || $blosxom::encode_xml_entities;
+ 
+  # Because we're inside a loop, we set $do_encode for runs after the first
+  unless ($do_encode) {
+    $do_encode = 1;
+    $blosxom::encode_xml_entities = 0;
+  }
 
   # Encode and reset encode_xml_entities flag
   $$title_ref = _escape_text( $$title_ref );
   $$body_ref  = _escape_html( $$body_ref );
-  $blosxom::encode_xml_entities = 0;
+
+  $category_list = '';
+  if ($blosxom::plugins{storytags}) {
+    for (@storytags::taglist) {
+      $category_list .= qq(<category>$_</category>\n) . ' ' x $item_indent;
+    }
+  }
 }
 
 # --- Private subroutines
@@ -110,42 +138,78 @@ sub _load_templates {
 <rss version="2.0"
     xmlns:dc="http://purl.org/dc/elements/1.1/"
     xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
-    xmlns:admin="http://webns.net/mvcb/"
-    xmlns:atom="http://www.w3.org/2005/Atom"
-    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-    xmlns:content="http://purl.org/rss/1.0/modules/content/">
+    xmlns:atom="http://www.w3.org/2005/Atom">
 
     <channel>
         <title>$blosxom::blog_title</title>
-        <link>$blosxom::url</link>
-        <description>$blosxom::blog_description</description>
-        <dc:date>\$lastmodified2::latest_iso8601</dc:date>
-        <dc:language>$blosxom::blog_language</dc:language>
-        <dc:creator>mailto:$rss20::author_email</dc:creator>
-        <dc:rights>$rss20::copyright</dc:rights>
-        <admin:generatorAgent rdf:resource="$rss20::generator_url" />
-        <admin:errorReportsTo rdf:resource="mailto:$rss20::error_email" />
-        <atom:link href="$blosxom::url$ENV{PATH_INFO}" rel="self" type="application/rss+xml" />
+        <link>$blosxom::url/</link>
+HEAD
+
+  if ($blosxom::path_info) {
+    $blosxom::template{$flavour}{'head'} .= 
+     ' ' x $channel_indent .
+     qq(<category>$blosxom::path_info</category>\n);
+  }
+  if ($blosxom::blog_description) {
+    $blosxom::template{$flavour}{'head'} .= 
+     ' ' x $channel_indent .
+      qq(<description>$blosxom::blog_description</description>\n);
+  }
+  if ($rss20::author_email) {
+    $blosxom::template{$flavour}{'head'} .= 
+     ' ' x $channel_indent .
+      qq(<managingEditor>$rss20::author_email</managingEditor>\n);
+  }
+  elsif ($rss20::author_name) {
+    $blosxom::template{$flavour}{'head'} .= 
+     ' ' x $channel_indent .
+      qq(<dc:creator>$rss20::author_name</dc:creator>\n);
+  }
+  if ($rss20::webmaster_email) {
+    $blosxom::template{$flavour}{'head'} .= 
+     ' ' x $channel_indent .
+      qq(<webMaster>$rss20::webmaster_email</webMaster>\n);
+  }
+  if ($rss20::copyright) {
+    $blosxom::template{$flavour}{'head'} .= 
+     ' ' x $channel_indent .
+      qq(<copyright>$rss20::copyright</copyright>\n);
+  }
+  my $path_info = $blosxom::path_info_orig || "/$blosxom::path_info";
+  $blosxom::template{$flavour}{'head'} .= <<HEAD;
+        <pubDate>\$storydate::latest_rfc822</pubDate>
+        <language>$blosxom::blog_language</language>
+        <generator>$rss20::generator</generator>
+        <atom:link href="$blosxom::url$path_info" rel="self" type="application/rss+xml" />
         <sy:updatePeriod>hourly</sy:updatePeriod>
         <sy:updateFrequency>1</sy:updateFrequency>
         <sy:updateBase>2000-01-01T12:00+00:00</sy:updateBase>
-
 HEAD
 
   $blosxom::template{$flavour}{'story'} = <<STORY;
+
         <item>
             <title>\$title</title>
-            <link>$rss20::permalink</link>                                                                             
-            <description>\$body</description>                                                   
-            <comments>$rss20::trackback_link</comments>                                                            
-            <guid isPermaLink="true">$rss20::permalink</guid>                                                          
-            <dc:date>\$storydate::story_iso8601</dc:date>
+            <link>$rss20::permalink</link>
+            <guid isPermaLink="true">$rss20::permalink</guid>
+            <pubDate>\$storydate::story_rfc822</pubDate>
+STORY
+
+  if ($rss20::trackback_link) {
+    $blosxom::template{$flavour}{'story'} .= 
+      ' ' x $item_indent .
+      qq(<comments>$rss20::trackback_link</comments>\n);
+  }
+  $blosxom::template{$flavour}{'story'} .= <<STORY;
+            \$rss20::category_list<description>\$body
+            </description>
         </item>
 STORY
 
   $blosxom::template{$flavour}{'foot'} = <<'FOOT';
-    </channel>                                    
-</rss>  
+
+    </channel>
+</rss>
 FOOT
 
   1;
@@ -180,10 +244,10 @@ Flavour string to use for your feed (typically 'rss' or 'rss20').
 
 Default author email address for posts.
 
-=item $error_email
+=item $webmaster_email
 
-Email address to use to report errors with the feed (defaults to 
-$author_email).
+Email address to use for webmaster responsible for the feed (defaults 
+to $author_email).
 
 =item $permalink
 
