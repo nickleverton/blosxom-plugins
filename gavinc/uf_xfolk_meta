@@ -38,6 +38,7 @@ my %config = (
 );
 
 # --------------------------------
+# __END_CONFIG__
 
 use vars qw($xfolk);
 
