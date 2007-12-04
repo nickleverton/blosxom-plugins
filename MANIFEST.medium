@@ -20,9 +20,10 @@ date_fullname
 date_rfc822
 dept
 emptymessage
-entries_index
 entries_cache
 entries_cache_meta
+entries_index
+entries_timestamp
 exclude
 extensionless
 fauxami
@@ -36,6 +37,7 @@ foreshortened
 fullcategory
 google_highlight
 google_sitesearch
+hcard
 hide
 interpolate_fancy
 isp
@@ -81,6 +83,11 @@ textile2
 textile2.README
 theme
 trackback_counts_display
+uf_adr_meta
+uf_geo_meta
+uf_hcalendar_meta
+uf_hcard_meta
+uf_xfolk_meta
 uselib
 whoami
 wikieditish
