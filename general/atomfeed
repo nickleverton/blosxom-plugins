@@ -4,7 +4,8 @@
 #            UTC and <modified> fixes for 0.3: Frank Hecker
 #            Enclosures support: Dave Slusher and Keith Irwin
 #            Upgrade to Atom 1.0 spec: Sam Pearson
-# Version: 2005-08-04
+#            Replace $feed_url with $path_info_full: Gavin Carr
+# Version: 2007-12-17
 # Docs: Included below: type "perldoc atomfeed", or scroll down
 # Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 
@@ -42,10 +43,6 @@ $copyright = "";
 # What domain should Blosxom use in ID tags?
 # Leave blank if you don't understand or for Blosxom to use the domain in $url.
 $id_domain = "";
-
-# Feed url
-# Set the URL of the atom feed here.  Defaults to $blosxom::url/index.atom
-$feed_url = "";
 
 # Icon
 # Put the URL for a site icon here (for example, your site's favicon).  Leave blank to exclude.
@@ -86,6 +83,8 @@ $css_url = "";
 $css_type = "text/css";
 
 # ----- END OF CONFIGURABLE VARIABLES -----
+
+# __END_CONFIG__
 
 # --- Plug-in package variables -----
 
@@ -145,8 +144,6 @@ sub head {
   # Note that these plugins will have to run *before* atomfeed for this to work as intended.
 
   $css_url and $css_url = "\n<?xml-stylesheet href=\"$css_url\" type=\"$css_type\"?>";
-
-  $feed_url or $feed_url = "$blosxom::url/index.atom";
 
   $copyright and $copyright = "<rights>$copyright</rights>";
 
@@ -365,18 +362,19 @@ sub _load_templates {
 
   $blosxom::template{'atom'}{'date'} = "\n";
 
-  $blosxom::template{'atom'}{'head'} =<<'HEAD';
-<?xml version="1.0" encoding="utf-8"?>$atomfeed::css_url
-<feed xmlns="http://www.w3.org/2005/Atom" xml:base="http://$atomfeed::id_domain">
-  <title type="$atomfeed::blog_title_type">$atomfeed::blog_title</title>
-  <subtitle type="$atomfeed::blog_description_type">$atomfeed::blog_description</subtitle>
-  <link rel="self" type="application/atom+xml" href="$atomfeed::feed_url"/>
+  my $path_info_full = $blosxom::path_info_full || "$blosxom::path_info/index.atom";
+  $blosxom::template{'atom'}{'head'} =<<HEAD;
+<?xml version="1.0" encoding="utf-8"?>\$atomfeed::css_url
+<feed xmlns="http://www.w3.org/2005/Atom" xml:base="http://\$atomfeed::id_domain">
+  <title type="\$atomfeed::blog_title_type">\$atomfeed::blog_title</title>
+  <subtitle type="\$atomfeed::blog_description_type">\$atomfeed::blog_description</subtitle>
+  <link rel="self" type="application/atom+xml" href="$blosxom::url$path_info_full" />
   <link rel="alternate" type="text/html" hreflang="$blosxom::blog_language" href="$blosxom::url" />
-  <id>tag$atomfeed::colon$atomfeed::id_domain,$atomfeed::feed_yr$atomfeed::colon/$blosxom::path_info</id>
-  <generator uri="$atomfeed::generator_url" version="$blosxom::version">Blosxom</generator>
-  $atomfeed::copyright
-  $atomfeed::icon_url
-  $atomfeed::logo_url
+  <id>tag\$atomfeed::colon\$atomfeed::id_domain,\$atomfeed::feed_yr\$atomfeed::colon/$blosxom::path_info</id>
+  <generator uri="\$atomfeed::generator_url" version="$blosxom::version">Blosxom</generator>
+  \$atomfeed::copyright
+  \$atomfeed::icon_url
+  \$atomfeed::logo_url
   {{{updated}}}
 HEAD
 
@@ -519,11 +517,6 @@ individual entries.  By default it'll attempt to glean your domain
 from the specified or calculated value of B<$blosxom::url>, but you can
 override this by setting this variable.
 
-B<$feed_url> Atom feeds contain pointers to themselves, so you can set
-this variable to the location of your atom feed.  If you leave in
-blank, it will use B<$blosxom::url/index.atom>, which in most cases will
-be correct.
-
 B<$icon_url> Set this variable to the URL of an icon to associate with
 your site.  This should be a small image with a 1:1 aspect ratio -
 favicons are ideal.  Leave blank to exclude.
@@ -605,10 +598,6 @@ B<$atomfeed::css_url> contains everything you need to link to a
 stylesheet, including the required opening and closing tags.  Note
 that this element belongs before the opening <feed> tag, as it is a
 generic XML element.
-
-B<$atomfeed::feed_url> contains the value for the href attribute of a
-feed-level <link rel="self"> element which points back at the feed
-itself.
 
 B<$atomfeed::feed_yr> contains the year your weblog started.
 
