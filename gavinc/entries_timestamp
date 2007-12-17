@@ -12,24 +12,27 @@ use Data::Dumper;
 use Time::Local;
 use CGI ();
 
+# Uncomment next line to enable debug output (don't uncomment debug() lines)
 #use Blosxom::Debug debug_level => 2;
 
 # --- Configurable variables -----
 
+my %config = ();
+
 # Where should I store the entries_timestamp index file?
 # IMO timestamps are metadata rather than state, but you may well not care.
-my $meta_dir = "$blosxom::datadir/../meta";
-#my $meta_dir = $blosxom::plugin_state_dir;
+$config{meta_dir} = "$blosxom::datadir/../meta";
+#$config{meta_dir} = $blosxom::plugin_state_dir;
 
 # What name should my entries_timestamp index file be called?
 # If you want to migrate from entries_index, you can just use the original
 # entries_index .entries_index.index file, or or just copy/rename it.
-my $entries_index = 'entries_timestamp.index';
-#my $entries_index = '.entries_index.index';
+$config{entries_index} = 'entries_timestamp.index';
+#$config{entries_index} = '.entries_index.index';
 
 # Reindexing password. If entries_timestamp finds a '?reindex=$reindex_password'
 # parameter it will check and resync machine timestamps to the human versions
-my $reindex_password = 'abracad';    # CHANGEME!
+$config{reindex_password} = 'abracad';    # CHANGEME!
 
 # --------------------------------
 # __END_CONFIG__
@@ -44,14 +47,14 @@ sub entries {
   return sub {
     my(%indexes, %files_ts, %files_ts_str, %files_symlinks);
 
-    # Read $entries_index
-    if ( open ENTRIES, "$meta_dir/$entries_index" ) {
+    # Read $config{entries_index}
+    if ( open ENTRIES, "$config{meta_dir}/$config{entries_index}" ) {
       my $index = join '', <ENTRIES>;
       close ENTRIES;
       if ( $index =~ m/\$(TS_\w+|VAR1) = \{/ ) {
         eval $index;
         if ( $@ ) {
-          warn "(entries_timestamp) eval of $entries_index failed: $@";
+          warn "(entries_timestamp) eval of $config{entries_index} failed: $@";
           return;
         }
         else {
@@ -149,7 +152,7 @@ sub entries {
          
           # If asked to reindex, check and sync machine timestamps to the human ones
           if ( my $reindex = $q->param('reindex') ) {
-            if ( $reindex eq $reindex_password ) {
+            if ( $reindex eq $config{reindex_password} ) {
               if ( my $reindex_ts = parse_ts( $files_ts_str{$File::Find::name} )) {
                 if ($reindex_ts != $files_ts{$File::Find::name}) {
                   # debug(1, "reindex: updating timestamp on '$File::Find::name'\n");
@@ -187,14 +190,14 @@ sub entries {
 
     # If updates, save back to index
     if ( $index_mods ) {
-      # debug(1, "index_mods $index_mods, saving \%files to $meta_dir/$entries_index");
-      if ( open ENTRIES, "> $meta_dir/$entries_index" ) {
+      # debug(1, "index_mods $index_mods, saving \%files to $config{meta_dir}/$config{entries_index}");
+      if ( open ENTRIES, "> $config{meta_dir}/$config{entries_index}" ) {
         print ENTRIES Data::Dumper->Dump([ \%files_ts_str, \%files_ts, \%files_symlinks ],
           [ qw(TS_HUMAN TS_MACHINE SYMLINKS) ] );
         close ENTRIES;
       } 
       else {
-        warn "(entries_timestamp) couldn't open $meta_dir/$entries_index for writing: $!\n";
+        warn "(entries_timestamp) couldn't open $config{meta_dir}/$config{entries_index} for writing: $!\n";
       }
     }
 
