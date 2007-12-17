@@ -175,11 +175,12 @@ HEAD
      ' ' x $channel_indent .
       qq(<copyright>$rss20::copyright</copyright>\n);
   }
+  my $path_info_full = $blosxom::path_info_full || "$blosxom::path_info/index.rss";
   $blosxom::template{$flavour}{'head'} .= <<HEAD;
         <pubDate>\$storydate::latest_rfc822</pubDate>
         <language>$blosxom::blog_language</language>
         <generator>$rss20::generator</generator>
-        <atom:link href="$blosxom::url$ENV{PATH_INFO}" rel="self" type="application/rss+xml" />
+        <atom:link href="$blosxom::url$path_info_full" rel="self" type="application/rss+xml" />
         <sy:updatePeriod>hourly</sy:updatePeriod>
         <sy:updateFrequency>1</sy:updateFrequency>
         <sy:updateBase>2000-01-01T12:00+00:00</sy:updateBase>
