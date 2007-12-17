@@ -12,27 +12,25 @@ use strict;
 
 # --- Configurable variables -----
 
-my %config = (
+my %config = ();
 
-  # Extra CSS classes to add to the microformat container e.g. to turn display off
-  class => '',
-  #class => 'nodisplay',
+# Extra CSS classes to add to the microformat container e.g. to turn display off
+$config{class} = '';
+#$config{class} = 'nodisplay';
 
-  # Whether to automatically add microformat to story bodies. If not set, 
-  # you must explicitly add $uf_adr_meta::adr to a template somewhere.
-  auto_append_to_body => 1,
+# Whether to automatically add microformat to story bodies. If not set, 
+# you must explicitly add $uf_adr_meta::adr to a template somewhere.
+$config{auto_append_to_body} = 1;
 
-  # What markup style to use for your adr, if auto-appending. 
-  # 3 styles are currently defined: 
-  # 'div-span' uses a 'div' elt for the container, and 'span' elements for the fields
-  # 'ul' uses a 'ul' list for the container, and 'li' elements for the fields
-  # 'dl' uses a 'dl' list for the container, 'dt' elements for field names, and 
-  #    'dd' elements for the fields themselves
-  #style => 'div-span',
-  #style => 'ul',
-  style => 'dl',
-
-);
+# What markup style to use for your adr, if auto-appending. 
+# 3 styles are currently defined: 
+# 'div-span' uses a 'div' elt for the container, and 'span' elements for the fields
+# 'ul' uses a 'ul' list for the container, and 'li' elements for the fields
+# 'dl' uses a 'dl' list for the container, 'dt' elements for field names, and 
+#    'dd' elements for the fields themselves
+#$config{style} = 'div-span';
+#$config{style} = 'ul';
+$config{style} = 'dl';
 
 # --------------------------------
 # __END_CONFIG__

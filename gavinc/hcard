@@ -14,12 +14,10 @@ use IO::File;
 
 # --- Configuration defaults -----
 
-my %config = (
+my %config = ();
 
-  # Where is the hcard metadata?
-  hcard_meta_file => "$blosxom::datadir/hcard.yml",
-
-);
+# Where is the hcard metadata?
+$config{hcard_meta_file} = "$blosxom::datadir/hcard.yml";
 
 # --------------------------------
 # __END_CONFIG__

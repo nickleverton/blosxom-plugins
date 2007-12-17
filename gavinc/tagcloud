@@ -13,27 +13,27 @@ use vars qw(%config $cloud);
 
 # --- Configuration defaults -----
 
-%config = (
+%config = ();
 
-  # tagcloud requires a hashref containing 'tag => count' pairs
-  tag_hashref           => $tags::tag_counts,
+# tagcloud requires a hashref containing 'tag => count' pairs
+$config{tag_hashref}           = $tags::tag_counts;
 
-  # Formatting options
-  tagcloud_prefix       => qq(<p class="tagcloud">\n),
-  tagcloud_suffix       => qq(</p>\n),
-  show_tag_no           => 0,
-  min_tag_no            => 2,
-  min_size              => 75,
-  max_size              => 200,
-  entry_type            => 'posting',
+# Formatting options
+$config{tagcloud_prefix}       = qq(<p class="tagcloud">\n);
+$config{tagcloud_suffix}       = qq(</p>\n);
+$config{show_tag_no}           = 0;
+$config{min_tag_no}            = 2;
+$config{min_size}              = 75;
+$config{max_size}              = 200;
+$config{entry_type}            = 'posting';
 
-  # Tags to omit from tagcloud
-  tagcloud_blacklist => [ 'Now Playing' ],
-
-);
+# Tags to omit from tagcloud
+$config{tagcloud_blacklist} = [ 'Now Playing' ];
 
 # ---------------------------------
 # __END_CONFIG__
+
+#blosxom::load_config( \%config, 'tagcloud' );
 
 my %tagcloud_blacklist = map { $_ => 1 } @{$config{tagcloud_blacklist}};
 
