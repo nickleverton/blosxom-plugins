@@ -1,0 +1,60 @@
+#!/usr/bin/perl
+# 
+# Script to activate Blosxom::Include in blosxom plugins, if available
+#
+# Usage: perl -MBlosxom::Include -e '1' 2>/dev/null && activate-blosxom-include <dir>
+#
+
+use strict;
+use Getopt::Std;
+use IO::File;
+use File::Copy;
+use Blosxom::Include 0.002;
+
+my %opts = ();
+getopts('Dnq', \%opts);
+my $deactivate = $opts{D};
+my $noop = $opts{n};
+my $quiet = $opts{q};
+
+my $dir = shift @ARGV || '*';
+for my $pname ( glob $dir ) {
+  next unless -f $pname;
+  my $ph = IO::File->new( $pname, 'r' )
+    or warn "Cannot open plugin '$pname' for read: $!" and next;
+  my $plugin = '';
+  {
+    local $/ = undef;
+    $plugin = <$ph>;
+    close $ph;
+  }
+  next unless $plugin;
+  next unless $plugin =~ m/__END_CONFIG__/;
+  if ($deactivate) {
+    next unless $plugin =~ m/^use\s+Blosxom::Include/m;
+  }
+  else {
+    next if $plugin =~ m/use\s+Blosxom::Include/;
+  }
+  print "Updating $pname ...\n" unless $quiet;
+  unless ($noop) {
+    my $modified = $plugin;
+    if ($deactivate) {
+      $modified =~ s/^use Blosxom::Include[^\n]*\n\s*//mg;
+    }
+    else {
+      $modified =~ s/^([^#])/\nuse Blosxom::Include qw($pname);\n$1/m;
+    }
+    next if $plugin eq $modified;
+    $ph = IO::File->new( "$pname.tmp", 'w' )
+      or die "Cannot open plugin '$pname.tmp' for write: $!";
+    print $ph $modified 
+      or die "Cannot write to plugin '$pname.tmp': $!";
+    close $ph
+      or die "Cannot close plugin '$pname.tmp': $!";
+    move "$pname.tmp", $pname 
+      or die "Cannot move plugin '$pname.tmp' to '$pname': $!";
+  }
+}
+print "Done.\n" unless $quiet;
+

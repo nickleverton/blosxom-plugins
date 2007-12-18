@@ -1,0 +1,67 @@
+#!/usr/bin/perl
+# 
+# Script to convert blosxom plugin config variables to globals, 
+#   for setting via 'blosxom.conf' or 'config' or 'prefs'
+#
+
+use strict;
+use Getopt::Std;
+use IO::File;
+use File::Copy;
+
+my %opts = ();
+getopts('nq', \%opts);
+my $noop = $opts{n};
+my $quiet = $opts{q};
+
+my $dir = shift @ARGV || '*';
+for my $pname ( glob $dir ) {
+  next unless -f $pname;
+  my $ph = IO::File->new( $pname, 'r' )
+    or warn "Cannot open plugin '$pname' for read: $!" and next;
+  my $plugin = '';
+  {
+    local $/ = undef;
+    $plugin = <$ph>;
+    close $ph;
+  }
+  next unless $plugin;
+  next unless $plugin =~ m/__END_CONFIG__/;
+  print "Updating $pname ...\n" unless $quiet;
+  unless ($noop) {
+    my ($pre, $post) = split m/__END_CONFIG__/, $plugin, 2;
+    my $modified = $pre;
+
+    # Globalise lexicals
+    my @lexicals = ();
+    while ($modified =~ m/^(\s*#\s*)?my\s+((\$\w+)\s*=)/m) {
+      push @lexicals, $3;
+      $modified =~ s/^(\s*#\s*)?my\s+((\$\w+)\s*=)/$1$2/m;
+    }
+    # Add a 'use vars' for lexicals if in strict mode
+    my %seen = ();
+    @lexicals = map { $seen{$_}++ ? () : $_ } @lexicals;
+    my $lexicals = join ' ', @lexicals;
+    $modified =~ s/^(use\s+strict\b[^\n]+\n)/$1use vars qw($lexicals);\n/m;
+
+    # Add unless defined fragments to all config variables
+    $modified =~ s/\G(.*?^#?\s*([\$\@%]\w+)\s*=[^;]+);/$1 unless defined $2;/msg;
+
+#   print "modified:\n\n$modified\n\n";
+#   next;
+    next if $modified eq $pre;
+
+    # Reconstitute and write out
+    $plugin = $modified . "__END_CONFIG__" . $post;
+    $ph = IO::File->new( "$pname.tmp", 'w' )
+      or die "Cannot open plugin '$pname.tmp' for write: $!";
+    print $ph $plugin 
+      or die "Cannot write to plugin '$pname.tmp': $!";
+    close $ph
+      or die "Cannot close plugin '$pname.tmp': $!";
+    move "$pname.tmp", $pname 
+      or die "Cannot move plugin '$pname.tmp' to '$pname': $!";
+  }
+}
+print "Done.\n" unless $quiet;
+
