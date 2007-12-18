@@ -1,8 +1,72 @@
-This is a collection of plugins for blosxom (v2). To use a plugin
-you just copy it into the directory you have configured as your
-$plugin_dir in blosxom.cgi. You should also check the top of the 
-plugin for a configuration section, and configure to taste.
+Blosxom Plugins README
+======================
 
-Plugin authors: if you would like to have your plugins included
-here, please send an email to blosxom-devel@lists.sourceforge.net.
+This is a collection of plugins for blosxom version 2.x. 
+
+Installation
+------------
+
+The traditional install method is to unpack this collection 
+somewhere temporary and then to copy the individual plugins you 
+are interested in to your blosxom.cgi $plugin_dir directory (or
+symlink on platforms that support it).
+
+If you are using a blosxom newer than 2.0.2, you also have the
+option of installing the entire collection in your $plugin_dir
+directory (or another directory in your $plugin_path), and 
+selecting the plugins to activate by using a blosxom.cgi 
+$plugin_list file (a simple list of plugins, one per line).
+
+
+Configuration
+-------------
+
+You should also check the top of the plugins you use for a 
+configuration section, and configure to taste.
+
+Configuration has traditionally involved updating any 
+configuration variables within the plugin itself. In addition,
+there are a couple of methods that allow you to configure 
+plugins externally to the plugin itself, which simplifies
+upgrades.
+
+External configuration options:
+
+1. If configuration variables are global/package variables, 
+they can be configured outside of the plugin in 'blosxom.conf',
+or in 'config' or 'prefs' files if using those plugins, using
+fully-qualified variable names. For example, to configure the
+'atomfeed' plugin, you might add the following variables to 
+your blosxom.conf:
+
+  $atomfeed::default_author = "author@example.com";
+  $atomfeed::feed_yr = 2005;
+
+If you want to use this configuration method you should run
+the 'scripts/globalise-config-variables' script within your 
+plugins directory, which will update all your plugins to be 
+compatible with this method.
+
+
+2. Alternatively, you can install the Blosxom::Include perl
+module from CPAN, which does not require that configuration
+variables are globals. It looks for per-plugin configuration 
+files in your blosxom.conf directory, and includes those files
+after the standard configuration section. So for example, to
+configure the 'atomfeed' plugin you would create an 'atomfeed'
+configuration file in your /etc/blosxom directory (or whatever)
+containing your customised configuration entries from the 
+plugin e.g.
+
+  # In /etc/blosxom/atomfeed, for example
+  $default_author = "author@example.com";
+  $feed_yr = 2005;
+
+If you want to use this configuration method you should run 
+the 'scripts/activate-blosxom-include' script from your plugins 
+directory, which will add the necessary 'use Blosxom::Include' 
+instruction to the top of all your plugins.
+
+
+
 
