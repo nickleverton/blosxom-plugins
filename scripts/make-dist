@@ -27,14 +27,18 @@ for SIZE in large medium small; do
 
   # Large
   else
-    # Copy everything
-    find * \( -name $TARBALL -o -name CVS \) -prune -o -type f -exec cp -p {} $TARBALL \;
-
+    # Copy more or less everything
+    find * \( -name $TARBALL -o -name CVS -o -name t -o -name scripts \) -prune -o -type f -exec cp -p {} $TARBALL \;
     # Prune unwanted files
-    for i in make-dist README.cvs blosxom-plugins-*.spec; do
+    for i in README.cvs blosxom-plugins-*.spec MANIFEST* *~ *zip *tar.gz; do
       rm -f $TARBALL/$i
     done
   fi
+
+  # Copy scripts directory
+  cp -rp scripts $TARBALL
+  rm -rf $TARBALL/scripts/CVS
+  rm -f $TARBALL/scripts/make-dist
    
   # Create tarball
   which tar >/dev/null 2>&1
