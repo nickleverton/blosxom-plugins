@@ -1,0 +1,119 @@
+# Blosxom Plugin: geo
+# Author(s): Gavin Carr <gavin@openfusion.com.au>
+# Version: 0.001000
+# Documentation: 'perldoc geo'
+
+package geo;
+
+use strict;
+use vars qw($latitude $longitude);
+
+sub start { 1 }
+
+# Return the first existing metadata item key and value given a list of keys
+sub _get_meta {
+    for my $attr ( @_ ) {
+        my $meta_attr = $attr;
+        $meta_attr =~ s/-/_/g;
+        my $value = $blosxom::meta{$meta_attr};
+        $value = eval "\$meta::$attr" unless defined $value;
+        return wantarray ? ( $attr, $value ) : $value if defined $value;
+    }
+    return wantarray ? () : undef;
+}
+
+sub story {
+    $latitude = _get_meta('geolatitude', 'latitude');
+    $longitude = _get_meta('geolongitude', 'longitude');
+
+    return 1;
+}
+
+1;
+
+__END__
+
+=head1 NAME
+
+geo - blosxom plugin to set $geo::latitude and $geo::longitude 
+story variables from metadata items
+
+=head1 DESCRIPTION
+
+geo - blosxom plugin to set story $geo::latitude and $geo::longitude 
+story variables from metadata items. 
+
+=head2 REQUIRED METADATA ITEMS
+
+=over 4
+
+=item Latitude (or GeoLatitude)
+
+A decimal between -90.0 (South Pole) and +90.0 (North Pole), indicating 
+degrees of latitude.
+
+=item Longitude (or GeoLongitude)
+
+A decimal between -180.0 (western hemisphere) and +180.0 (eastern hemisphere), 
+indicating degrees of longitude.
+
+=back
+
+If any required metadata is missing the plugin just skips the story.
+
+=back
+
+=head1 EXAMPLE
+
+If using the L<metamail> plugin:
+
+  Testing geo
+  Latitude: -33.717770
+  Longitude: 151.115886
+
+If using the L<meta> plugin:
+
+  Random blog post
+  meta-latitude: -33.717770
+  meta-longitude: 151.115886
+
+=head1 USAGE
+
+geo should be loaded after your meta plugins (typically either 
+L<metamail> or L<meta>).
+
+=head1 SEE ALSO
+
+Blosxom: http://blosxom.sourceforge.net/
+
+=head1 AUTHOR
+
+Gavin Carr <gavin@openfusion.com.au>, http://www.openfusion.net/
+
+=head1 LICENSE
+
+Copyright 2007, Gavin Carr.
+
+This plugin is licensed under the same terms as blosxom itself i.e.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+=cut
+
+# vim:ft=perl
