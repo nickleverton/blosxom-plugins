@@ -1,8 +1,8 @@
 # Blosxom Plugin: rss20
 # Author(s): Gavin Carr <gavin@openfusion.com.au>
-# Version: 0.002000
+# Version: 0.003000
 # Requires: storydate
-# Suggests: absolute, storytags
+# Suggests: absolute, storytags, geo
 # Follows:  storydate
 
 package rss20;
@@ -19,6 +19,7 @@ use vars qw(
   $copyright
   $generator
   $category_list
+  $georss
 );
 
 # --- Configuration variables -----
@@ -112,6 +113,14 @@ sub story {
       $category_list .= qq(<category>$_</category>\n) . ' ' x $item_indent;
     }
   }
+
+  $georss = '';
+  if ($blosxom::plugins{geo} && $geo::latitude && $geo::longitude) {
+    $georss = qq(<georss:point>$geo::latitude $geo::longitude</georss:point>\n) .
+      ' ' x $item_indent;
+  }
+
+  return 1;
 }
 
 # --- Private subroutines
@@ -138,6 +147,14 @@ sub _load_templates {
 <rss version="2.0"
     xmlns:dc="http://purl.org/dc/elements/1.1/"
     xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+HEAD
+
+  if ($blosxom::plugins{geo}) {
+    $blosxom::template{$flavour}{'head'} .= 
+      qq(    xmlns:georss="http://www.georss.org/georss"\n);
+  }
+
+  $blosxom::template{$flavour}{'head'} .= <<HEAD;
     xmlns:atom="http://www.w3.org/2005/Atom">
 
     <channel>
@@ -200,8 +217,17 @@ STORY
       ' ' x $item_indent .
       qq(<comments>$rss20::trackback_link</comments>\n);
   }
-  $blosxom::template{$flavour}{'story'} .= <<STORY;
-            \$rss20::category_list<description>\$body
+  $blosxom::template{$flavour}{'story'} .= 
+      ' ' x $item_indent .
+      '$rss20::category_list';
+
+  # GeoRSS support
+  if ($blosxom::plugins{geo}) {
+    $blosxom::template{$flavour}{'story'} .= '$rss20::georss';
+  }
+
+  $blosxom::template{$flavour}{'story'} .= <<'STORY';
+<description>$body
             </description>
         </item>
 STORY
@@ -229,6 +255,10 @@ rss20 - blosxom plugin to generate an RSS 2.0 feed of your blog
 rss20 is a blosxom plugin to generate an RSS 2.0 feed of your blog. It
 is self-contained, including the required flavours, and has a bunch of
 configuration variables to allow for configuration.
+
+If you're using the L<geo> plugin, rss20 will also add georss:point
+entries for any items with latitude and longitude metadata set (see 
+L<geo>).
 
 =head2 CONFIGURATION
 
@@ -277,8 +307,14 @@ plugins that manipulate your story content to have run already. It
 also should be run after the 'story' or 'prefs' plugins if you want
 to use those to customise your configuration variables.
 
+Requires the L<storydate> plugin for setting up story dates in the 
+right formats, and recommends the L<absolute> plugin for absolutising
+URLs.
+
 
 =head1 SEE ALSO
+
+L<storydate>, L<absolute>, L<geo>
 
 Blosxom: http://blosxom.sourceforge.net/
 
