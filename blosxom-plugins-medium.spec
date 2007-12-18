@@ -25,8 +25,10 @@ blogging application.
 %install
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
-mkdir -p %{buildroot}/usr/share/blosxom/plugins
+mkdir -p %{buildroot}/usr/share/blosxom/plugins/scripts
 
+install -m0755 scripts/* %{buildroot}/usr/share/blosxom/plugins/scripts
+rm -rf scripts
 install -m0644 * %{buildroot}/usr/share/blosxom/plugins
 
 rm -f %{buildroot}/usr/share/blosxom/plugins/*README
@@ -36,7 +38,9 @@ rm -f %{buildroot}/usr/share/blosxom/plugins/*.spec
 #install activate_blosxom_ipc %{buildroot}/usr/share/blosxom/plugins
 
 %post
-#/usr/share/blosxom/plugins/activate_blosxom_ipc
+# Activate Blosxom::Include on plugins if installed
+perl -MBlosxom::Include -e1 2>/dev/null \
+  && /usr/share/blosxom/plugins/scripts/activate-blosxom-include
 
 %clean
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
@@ -44,6 +48,7 @@ rm -f %{buildroot}/usr/share/blosxom/plugins/*.spec
 %files
 %defattr(-,root,root)
 /usr/share/blosxom/plugins/*
+/usr/share/blosxom/plugins/scripts/*
 %doc README
 %doc *.README
 %doc *.LICENCE 
