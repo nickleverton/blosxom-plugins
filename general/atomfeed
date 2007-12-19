@@ -97,7 +97,6 @@ $zerozero = '00';
 $id_domain or ($id_domain) = $blosxom::url =~ m#http://(?:www\.)?([^\/]+)#;
 
 $utc_date = '';
-$feed_utc_date = '';
 use vars qw/$feed_utc_date/;
 $category;
 $links;
@@ -158,6 +157,8 @@ sub head {
 
   ($blog_title_type, $blog_title) = _parse_markup($blosxom::blog_title);
   ($blog_description_type, $blog_description) = _parse_markup($blosxom::blog_description);
+
+  $feed_utc_date = '';
 
   1;
 }
