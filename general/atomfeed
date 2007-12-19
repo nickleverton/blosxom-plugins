@@ -192,7 +192,7 @@ sub story {
 			      $updated_utc[1]);
 
   # Date/time of most recently-modified story becomes date/time of the feed.
-  $feed_utc_date = $updated_utc_date if $updated_utc_date > $feed_utc_date;
+  $feed_utc_date = $updated_utc_date if $updated_utc_date gt $feed_utc_date;
 
   # use %blosxom::files for the year component of feed-level <atom:id>
   # in case the creation time is cached somewhere.
