@@ -1,6 +1,6 @@
 # Blosxom Plugin: tags
 # Author(s): Gavin Carr <gavin@openfusion.com.au>
-# Version: 0.001000
+# Version: 0.002000
 # Documentation: See the bottom of this file or type: perldoc tags
 
 package tags;
@@ -11,18 +11,20 @@ use File::stat;
 # Uncomment next line to enable debug output (don't uncomment debug() lines)
 #use Blosxom::Debug debug_level => 2;
 
-use vars qw($tagroot $tag_cache $tag_entries $tag_counts);
+use vars qw(%config $tag_cache $tag_entries $tag_counts);
 
 # --- Configuration variables -----
 
+%config = ();
+
 # What path prefix is used for tag-based queries?
-$tagroot = "/tags";
+$config{tagroot} = "/tags";
 
 # What story header to you use for your tags?
-my $tag_header = 'Tags';
+$config{tag_header} = 'Tags';
 
 # Where is our $tag_cache file?
-my $tag_cache_file = "$blosxom::plugin_state_dir/tag_cache";
+$config{tag_cache_file} = "$blosxom::plugin_state_dir/tag_cache";
 
 # ---------------------------------
 # __END_CONFIG__
@@ -37,8 +39,8 @@ my $path_tags_op;
 
 sub start {
     # Load tag_cache
-    if (-f $tag_cache_file) {
-        my $fh = FileHandle->new( $tag_cache_file, 'r' )
+    if (-f $config{tag_cache_file}) {
+        my $fh = FileHandle->new( $config{tag_cache_file}, 'r' )
            or warn "[tags] cannot open cache: $!";
         {
             local $/ = undef;
@@ -55,7 +57,7 @@ sub entries {
     my $path_info = "/$blosxom::path_info";
     # debug(3, "entries, path_info $path_info");
 
-    if ($path_info =~ m!^$tagroot/(.*)!) {
+    if ($path_info =~ m!^$config{tagroot}/(.*)!) {
         $blosxom::flavour = '';
         my $taglist = $1;
         # debug(3, "entries, path_info matches tagroot (taglist $taglist)");
@@ -76,7 +78,7 @@ sub entries {
             @path_tags = split /\s*,\s*/, $taglist;
             $path_tags_op = ',';
         }
-        # If $path_info matches $tagroot it's a virtual path, so reset
+        # If $path_info matches tagroot it's a virtual path, so reset
         $blosxom::path_info = '';
         $blosxom::flavour ||= $blosxom::default_flavour;
     }
@@ -133,7 +135,7 @@ sub story {
     }
 
     # mtime has changed (or story is new) - compare old and new tagsets
-    my $tags_new = $blosxom::meta{$tag_header};
+    my $tags_new = $blosxom::meta{$config{tag_header}};
     my $tags_old = $tag_cache->{"$path/$filename"}->{tags};
     # debug(2, "tags_new: $tags_new, tags_old: $tags_old");
 
@@ -160,9 +162,9 @@ sub last {
             }
         }
 
-        # Save tag caches back to $tag_cache_file
-        my $fh = FileHandle->new( $tag_cache_file, 'w' )
-           or warn "[tags] cannot open cache '$tag_cache_file': $!" 
+        # Save tag caches back to $config{tag_cache_file}
+        my $fh = FileHandle->new( $config{tag_cache_file}, 'w' )
+           or warn "[tags] cannot open cache '$config{tag_cache_file}': $!" 
              and return 0;
         print $fh Data::Dumper->Dump([ $tag_cache, $tag_entries, $tag_counts ], 
                                      [ qw(tag_cache tag_entries tag_counts) ]);
@@ -184,9 +186,9 @@ and allow tag-based filtering
 L<tags> is a blosxom plugin to read tags from story files, maintain a tag 
 cache, and allow tag-based filtering. 
 
-Tags are defined in a comma-separated list in a $tag_header header at the 
-beginning of a blosxom post, with $tag_header defaulting to 'Tags'. So for 
-example, your post might look like:
+Tags are defined in a comma-separated list in a $config{tag_header} header 
+at the beginning of a blosxom post, with $tag_header defaulting to 'Tags'. 
+So for example, your post might look like:
 
     My Post Title
     Tags: dogs, cats, pets
@@ -194,16 +196,16 @@ example, your post might look like:
     Post text goes here ...
 
 L<tags> uses the L<metamail> plugin to parse story headers, and stores 
-the tags in a cache (in $tag_cache_file, which defaults to 
+the tags in a cache (in $config{tag_cache_file}, which defaults to 
 $blosxom::plugin_state_dir/tag_cache). The tag cache is only updated 
 when the mtime of the story file changes, so L<tags> should perform
 pretty well.
 
 L<tags> also supports tag-based filtering. If the blosxom $path_info 
-begins with $tagroot ('/tags', by default, e.g. '/tags/dogs'), then 
-L<tags> filters the entries list to include only posts with the 
+begins with $config{tagroot} ('/tags', by default, e.g. '/tags/dogs'), 
+then L<tags> filters the entries list to include only posts with the 
 specified tag. The following syntaxes are supported (assuming the
-default '/tags' for $tagroot):
+default '/tags' for 'tagroot'):
 
 =over 4
 

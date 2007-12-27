@@ -1,6 +1,6 @@
 # Blosxom Plugin: storytags
 # Author(s): Gavin Carr <gavin@openfusion.com.au>
-# Version: 0.002000
+# Version: 0.003000
 # Documentation: See the bottom of this file or type: perldoc storytags
 # Requires: tags
 # Follows: tags
@@ -12,13 +12,15 @@ use strict;
 # Uncomment next line to enable debug output (don't uncomment debug() lines)
 #use Blosxom::Debug debug_level => 1;
 
-use vars qw($taglist @taglist);
+use vars qw(%config $taglist @taglist);
 
 # --- Configuration variables -----
 
+%config = ();
+
 # Formatting strings
-my $prefix = 'Tags: ';
-my $suffix = '. ';
+$config{prefix} = 'Tags: ';
+$config{suffix} = '. ';
 
 # ---------------------------------
 # __END_CONFIG__
@@ -48,12 +50,12 @@ sub story {
 sub _format_taglist {
     my ($tags) = @_;
     return '' unless @$tags;
-    return $prefix
+    return $config{prefix}
            . join(', ', 
                map { qq(<a href="$blosxom::url/tags/$_" rel="tag">$_</a>) }
                @$tags
            )
-           . $suffix;
+           . $config{suffix};
 }
 
 1;
@@ -70,12 +72,12 @@ and @storytags::taglist array of tags
 L<storytags> is a blosxom plugin to format a per-story $storytags::taglist 
 string, and a @storytags::taglist array of tags. The $taglist is a 
 comma-separated list of the tags defined for the story, prefixed by 
-$storytags::prefix, and suffixed by $storytags::suffix. If no tags are 
+$config{prefix}, and suffixed by $config{suffix}. If no tags are 
 defined, then $taglist will be the empty string '' (i.e. no prefix and 
 suffix are added). @taglist is a simple array of the tags for the story,
 and an empty array if none are set.
 
-The default values for $prefix and $suffix are 'Tags: ' and '. ' 
+The default values for 'prefix' and 'suffix' are 'Tags: ' and '. ' 
 respectively, so a typical $taglist might look like:
 
     Tags: dogs, cats, pets.

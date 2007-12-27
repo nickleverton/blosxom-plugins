@@ -2,13 +2,14 @@
 # Author(s): Gavin Carr <gavin@openfusion.com.au>
 # (based on work by Frank Hecker <hecker@hecker.org>
 #  and Bob Schumaker <cobblers@pobox.com>)
-# Version: 0.002000
+# Version: 0.003000
 # Documentation: See the bottom of this file or type: perldoc storydate
 
 package storydate;
 
 use strict;
 
+use vars qw(%config);
 use File::stat;
 
 # Uncomment next line to enable debug output (don't uncomment debug() lines)
@@ -16,8 +17,10 @@ use File::stat;
 
 # --- Configuration variables -----
 
+%config = ();
+
 # Perl modules to use for strftime, in search order
-my @strftime_modules = qw(Time::Piece Date::Format POSIX);
+$config{strftime_modules} = [ qw(Time::Piece Date::Format POSIX) ];
 
 # ---------------------------------
 # __END_CONFIG__
@@ -128,7 +131,7 @@ sub format_date {
     return $date;
 }
 
-# strftime wrapper, using the first strftime() it finds in @strftime_modules
+# strftime wrapper, using the first strftime() it finds in 'strftime_modules'
 my %cache = ();
 my $strftime_module = '';
 sub strftime {
@@ -145,7 +148,7 @@ sub strftime {
 
     # Search for a strftime module, and load
     if (! $strftime_module) {
-        for my $module (@strftime_modules) {
+        for my $module (@{$config{strftime_modules}}) {
             if (eval "require $module") {
                 $strftime_module = $module;
                 # debug(2, "strftime_module: $strftime_module");

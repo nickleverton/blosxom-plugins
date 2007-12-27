@@ -1,6 +1,6 @@
 # Blosxom Plugin: metamail
 # Author(s): Gavin Carr <gavin@openfusion.com.au>
-# Version: 0.001000
+# Version: 0.002000
 # Documentation: 'perldoc metamail'
 # Requires: metaclear
 # Follows: metaclear
@@ -8,19 +8,22 @@
 package metamail;
 
 use strict;
+use vars qw(%config);
 
 #use Blosxom::Debug debug_level => 1;
 
 # --- Configurable variables -----
 
+%config = ();
+
 # Headers to consider titles
-my @title_headers = qw(Title Subject);
+$config{title_headers} = [ qw(Title Subject) ];
 
 # Headers to keep in the body (required by later plugins, for instance)
-my @keep_in_body_headers = qw(Tags);
+$config{keep_in_body_headers} = qw(Tags);
 
 # Whether to unfold (join) multi-line headers
-my $unfold_headers = 1;
+$config{unfold_headers} = 1;
 
 # --------------------------------
 # __END_CONFIG__
@@ -44,13 +47,13 @@ sub story {
     }
     # For backwards compatibility, assume a header without a : is a title
     else {
-      $key = @title_headers[0] || 'Title';
+      $key = $config{title_headers}->[0] || 'Title';
       $value = $header;
     }
     chomp $value;
     
     # Unfold
-    $value =~ s/\n //g if $unfold_headers;
+    $value =~ s/\n //g if $config{unfold_headers};
 
     # Cache header
     $header{$key} = $value;
@@ -68,12 +71,12 @@ sub story {
 
   # Update $$title_ref to the first title_header we can find
   $$title_ref = '';
-  for (@title_headers) {
+  for (@{$config{title_headers}}) {
     $$title_ref = $header{$_} and last if $header{$_};
   }
 
   # Update body_ref
-  if (my @keep_headers = grep { defined $header{$_} } @keep_in_body_headers) {
+  if (my @keep_headers = grep { defined $header{$_} } @{$config{keep_in_body_headers}}) {
     $$body_ref = join("\n", map { "$_: $header{$_}" } @keep_headers) . "\n" . $body;
   }
   else {
@@ -123,7 +126,7 @@ metamail will create the following %blosxom::meta entries:
 
 For backwards compatibility purposes, L<metamail> will treat any header
 not containing a colon (which is typically the first line title) as the 
-'Title' of the post, and store it with the first key in @title_headers
+'Title' of the post, and store it with the first key in 'title_headers'
 (default is 'Title'). L<metamail> supports the title being anywhere in 
 the headers, and will report it properly to blosxom, but any plugins 
 that look directly at the post file may still expect the title 
