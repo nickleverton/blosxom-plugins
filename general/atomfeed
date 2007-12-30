@@ -4,8 +4,8 @@
 #            UTC and <modified> fixes for 0.3: Frank Hecker
 #            Enclosures support: Dave Slusher and Keith Irwin
 #            Upgrade to Atom 1.0 spec: Sam Pearson
-#            Replace $feed_url with $path_info_full: Gavin Carr
-# Version: 2007-12-17
+#            Removed static $feed_url, added georss support: Gavin Carr
+# Version: 2007-12-31
 # Docs: Included below: type "perldoc atomfeed", or scroll down
 # Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 
@@ -101,6 +101,7 @@ use vars qw/$feed_utc_date/;
 $category;
 $links;
 $summary;
+$georss;
 
 # ----- plugin subroutines -----
 
@@ -170,8 +171,15 @@ sub story {
   use File::stat;
 
   # set up <category>:
+  $category = '';
   if ( $path ) {
     $category = "<category term=\"$path\"/>";
+  }
+
+  # GeoRSS support
+  $georss = '';
+  if ($blosxom::plugins{geo} && $geo::latitude && $geo::longitude) {
+    $georss = qq(<georss:point>$geo::latitude $geo::longitude</georss:point>);
   }
 
   # <published>: derive from %blosxom::files
@@ -260,7 +268,7 @@ sub story {
   # Parse the post body:
   ($body_type, $body) = _parse_markup($$body_ref);
 
-  1;
+  return 1;
 }
 
 sub foot {
@@ -366,7 +374,16 @@ sub _load_templates {
   my $path_info_full = $blosxom::path_info_full || "$blosxom::path_info/index.atom";
   $blosxom::template{'atom'}{'head'} =<<HEAD;
 <?xml version="1.0" encoding="utf-8"?>\$atomfeed::css_url
-<feed xmlns="http://www.w3.org/2005/Atom" xml:base="http://\$atomfeed::id_domain">
+<feed xmlns="http://www.w3.org/2005/Atom" xml:base="http://\$atomfeed::id_domain"
+HEAD
+
+  if ($blosxom::plugins{geo}) {
+    $blosxom::template{'atom'}{'head'} .= 
+      qq(      xmlns:georss="http://www.georss.org/georss");
+  }
+
+  $blosxom::template{'atom'}{'head'} .= <<HEAD;
+>
   <title type="\$atomfeed::blog_title_type">\$atomfeed::blog_title</title>
   <subtitle type="\$atomfeed::blog_description_type">\$atomfeed::blog_description</subtitle>
   <link rel="self" type="application/atom+xml" href="$blosxom::url$path_info_full" />
@@ -386,7 +403,7 @@ HEAD
     <title type="$atomfeed::title_type">$atomfeed::title</title>
     <published>$atomfeed::published_utc_date</published>
     <updated>$atomfeed::updated_utc_date</updated>
-    $atomfeed::category
+    $atomfeed::category$atomfeed::georss
     <author>
       <name>$atomfeed::author</name>
       $atomfeed::author_uri$atomfeed::author_email
