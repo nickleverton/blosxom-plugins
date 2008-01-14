@@ -8,7 +8,7 @@
 package moreentries;
 
 use strict;
-use vars qw/ $active $totalposts $start $end $prevlink $nextlink $nextcount $links $selfstyle /;
+use vars qw/ $active $totalposts $start $end $prevlink $nextlink $prevcount $nextcount $links $selfstyle /;
 
 # --- Configurable variables -----
 
@@ -85,8 +85,8 @@ sub filter {
     # Allow for the first encountered plugin::sort subroutine to override the
     # default built-in sort subroutine
     my $tmp; 
-    foreach my $plugin ( @plugins ) { 
-        if ($plugins{$plugin} > 0 and $plugin->can('sort')) {
+    foreach my $plugin ( @blosxom::plugins ) { 
+        if ($blosxom::plugins{$plugin} > 0 and $plugin->can('sort')) {
             if (defined($tmp = $plugin->sort())) {
                 $sort = $tmp and last; 
              }
@@ -118,11 +118,12 @@ sub filter {
     my $next = $end + 1;
     $prevlink = "$url${appendchar}_start=$prev" if $start > 1;
     $nextlink = "$url${appendchar}_start=$next" if $end < $totalposts;
+    $prevcount = $start - $prev;
     $nextcount = $totalposts - $end;
     $nextcount = $blosxom::num_entries if $nextcount > $blosxom::num_entries;
     my $style = $selfstyle? "style='padding:0 15px'" : '';
     $links = "<div class='moreentries'><span class='prevlink' $style>";
-    if (defined($prevlink)) { $links .= "<a href='$prevlink'>Previous $blosxom::num_entries entries</a>"; }
+    if (defined($prevlink)) { $links .= "<a href='$prevlink'>Previous $prevcount entries</a>"; }
     $links .= "</span><span class='nextlink' $style>";
     if (defined($nextlink)) { $links .= "<a href='$nextlink'>Next $nextcount entries</a>"; }
     $links .= "</span></div>";
@@ -194,7 +195,7 @@ The output of $moreentries::links will look like this:
  
 The embedded style prevents the links from being right next to each other.  This output
 is sufficient for a quick drop-in.  If you'd like to control CSS styles yourself, 
-there is a confi variable ( $selfstyle ) that controls this, just set it to 0.
+there is a config variable ( $selfstyle ) that controls this, just set it to 0.
 
 If you want even more control over your output, there are some additional variables
 you can use:
@@ -203,6 +204,11 @@ you can use:
 $moreentries::prevlink - if $moreentries::start is not 1, this will contain an
 URL to move to the previous batch of entries.  Will be undef if no Previous batch
 (i.e., $moreentries::start =1)
+
+$moreentries::prevcount - If there is a previous batch, this contains the number of posts
+in it.  This is normally $num_entries, except when there arent enough entries.  For example,
+if this batch starts at post 21 in the Rants category, and your $num_entries is 15, then
+$morrentries::prevcount will be 5.
 
 $moreentries::nextlink - if $moreentries::end < $morrentries::totalposts, this will
 contain an URL to the next batch of entries.  Will be undef if no Next batch
