@@ -16,7 +16,7 @@ package interpolate_fancy;
 # there's a chance of some tomfoolery, exposing variables and calling
 # actions/subroutines you might not want called.
 # 0 = No (default),  1 = Yes
-our $recurse_into_story = 0;
+our $recurse_into_story = 1;
 
 # --------------------------------
 
