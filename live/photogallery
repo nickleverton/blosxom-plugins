@@ -1,17 +1,21 @@
 # Blosxom Plugin: photogallery
 # Author(s): DeWitt Clinton <dewitt@unto.net>
 #            Nick Leverton <nick@leverton.org>
-# Version: 0.9
+# Version: 0.9.2
 # Documentation: See the bottom of this file or 
 # type: perldoc photogallery
+#
+# Changelog
+# =========
+# 0.9.2 NJL Add image sizes to <IMG> tags for faster layout rendering
 
 
 package photogallery;
 
 # --- Configurable variables -----
 
-# Set this to the standard width of the screen.  This will effect the
-# size of the thumbnail and large version of each image.
+# Set this to the fixed width of the story section of your layout.
+# This will affect the size of the thumbnail and large version of each image.
 my $screen_width = 600;
 
 # Set this to the number of columns in the thumbnail display.
@@ -20,13 +24,17 @@ my $columns = 3;
 # Set this to the padding (in pixels) between columns
 my $padding = 10;
 
+# Placeholder var for thumbnail cell width for fixed width columns, fully flowed
+# TODO: not yet implemented
+my $cell_width = undef;
+
 # Set to the images dir (must be writable by the owner of the httpd process)
 my $image_dir = "/var/cache/blosxom/photogallery";
 
 # Set to public image URL (the same directory as $image_dir, as seen by the
 # web browser).  Under Apache you would typically set this up with an Alias:
 #   Alias /cache_gallery /var/cache/blosxom/photogallery
-my $public_url = "/cache_gallery";
+my $public_url = "/photogallery";
 
 # Set a content MIME type for each of the valid image types
 my %content_types = ( 'jpg' => 'image/jpeg',
@@ -37,11 +45,19 @@ my %content_types = ( 'jpg' => 'image/jpeg',
 # The filename, per photo directory, of the captions file
 # Must be readable and have a different extension than blosxom files
 # For classic photogallery captions.pg use:
-# my $captions_file = "captions.pg";
-# my $captions_filesep = qr/:\s*/;
+#   my $captions_file = "captions.pg";
+#   my $captions_filesep = qr/:\s*/;
 # For igal compatibility you could use:
 my $captions_file = ".captions";
 my $captions_filesep = qr/\s+----\s+/;
+
+# Icon URLs for navigation.  Defaults to standard Apache2 icon locations
+# my $icon_back    = '<img src="/icons/left.png" class="icon" alt="<<" />';
+# my $icon_forward = '<img src="/icons/right.png" class="icon" alt=">>" />';
+# my $icon_up      = '<img src="/icons/up.png" class="icon" alt="^" />';
+my $icon_back    = '<img src="/icon/1leftarrow.png" class="icon" width="16" height="16" alt="<<" />';
+my $icon_forward = '<img src="/icon/1rightarrow.png" class="icon" width="16" height="16" alt=">>" />';
+my $icon_up      = '<img src="/icon/1uparrow.png" class="icon" width="16" height="16" alt="<<" />';
 
 
 # --------------------------------
@@ -50,13 +66,12 @@ $start = time( );
 
 use Digest::MD5 qw( md5_hex );
 use CGI qw/ :html4 /;
-use Image::Magick;
 
 # Automatically build the list of valid image types
 my $imagetypes = join( '|', keys %content_types );
 
 # The gallery HTML is populated here.
-$photogallery;
+our $photogallery;
 
 # Prepare the cache dir if necessary
 if ( !-d $image_dir )
@@ -69,6 +84,14 @@ if ( !-d $image_dir )
 
 sub start 
 {
+  eval { require Image::Magick; };
+  warn($@), return 0 if $@;
+  while (<DATA>) {
+    last if /^(__END__)?$/;
+    my($ct, $comp, $txt) = /^(\S+)\s(\S+)\s(.*)$/;
+    $txt =~ s/\\n/\n/mg;
+    $template{$ct}{$comp} = $txt;
+  }
   return $blosxom::static_or_dynamic eq 'dynamic' ? 1 : 0;
 }
 
@@ -95,8 +118,8 @@ sub print_gallery_thumbs
   my ( $path, @images ) = @_;
 
   my $pad = $padding / 2;
-  $photogallery = '<div class="photogallery thumbnails" style="text-align: center">';	# FIXME CSS2
-  $photogallery .= "<table cellpadding=\"$pad\"><tr>";
+  $photogallery = '<div class="photogallery">';
+  $photogallery .= '<table class="thumbnails" cellpadding="'. $pad .'"><tr>';
 
   my $count = 1;
 
@@ -105,14 +128,15 @@ sub print_gallery_thumbs
     my $source_file = "$blosxom::datadir/$path/$image"; 
     my $hashed_file = get_hashed_filename( "$path/$image", 'THUMB' );
     my $cached_file = "$image_dir/$hashed_file";
-    cache_image( $source_file, $cached_file, 'THUMB' );
+    my( @thumb_size ) = cache_image( $source_file, $cached_file, 'THUMB' );
 
 
     my $thumbnail_url = "$public_url/$hashed_file";
-    my $large_url = "$blosxom::url$path?image=$image";
-    $photogallery .= '<td class="photogallery thumbnail">'; #FIXME CSS2
+    (my $image_url = $image) =~ s/([^-_.,0-9a-zA-Z])/ '%'.unpack('H*',$1) /eg;
+    my $large_url = "$blosxom::url$path?image=$image_url";
+    $photogallery .= '<td>';
     $photogallery .= "<a href=\"$large_url\">";
-    $photogallery .= "<img border=\"0\" src=\"$thumbnail_url\" /></a></td>";
+    $photogallery .= "<img class=\"thumb\" src=\"$thumbnail_url\" width=\"$thumb_size[0]\" height=\"$thumb_size[1]\" /></a></td>";
 
     if ( $count % $columns == 0 )
     {
@@ -135,33 +159,31 @@ sub print_image
   my $hashed_file = get_hashed_filename( "$path/$image", 'FULL' );
   my $cached_file = "$image_dir/$hashed_file";
   my $full_url = "$public_url/$hashed_file";
-  cache_image( $source_file, $cached_file, 'FULL' );
+  my( @full_size ) = cache_image( $source_file, $cached_file, 'FULL' );
 
   my $hashed_file = get_hashed_filename( "$path/$image", 'LARGE' );
   my $cached_file = "$image_dir/$hashed_file";
-  cache_image( $source_file, $cached_file, 'LARGE' );
   my $large_url = "$public_url/$hashed_file";
+  my( @large_size ) = cache_image( $source_file, $cached_file, 'LARGE' );
 
   my $prev_image = get_prev_image( $image, @images );
   my $next_image = get_next_image( $image, @images );
   
   my $caption = get_caption( $path, $image );
 
-  $photogallery =  '<div class="photogallery image"><p><b>$image</b></p>';
-  $photogallery .= "<p align=\"center\">";
+  $photogallery =  '<div class="photogallery"><div>$image</div>';
   $photogallery .= ( $prev_image ? 
-    "<a href=\"$blosxom::url$path?image=$prev_image\">&lt;&lt; prev </a>" : 
-    "&lt;&lt; prev " );
+    "<a href=\"$blosxom::url$path?image=$prev_image\">$icon_back&nbsp;prev </a>" : 
+    "$icon_back&nbsp;prev " );
   $photogallery .= "<a href=\"$blosxom::url$path\">" . 
-    "&nbsp;&nbsp; gallery &nbsp;&nbsp; </a>";
+    "$icon_up&nbsp;gallery</a> ";
   $photogallery .= ( $next_image ? 
-    "<a href=\"$blosxom::url$path?image=$next_image\"> next &gt;&gt;</a>" : 
-     "next &gt;&gt;" );
-  $photogallery .= "</p>";
-  $photogallery .= "<p><b>$caption</b></p>" if defined $caption;
-  $photogallery .= "<center><a href=\"$full_url\">" . 
-    "<img border=\"0\" src=\"$large_url\"></a></center>";
-  $photogallery .= "<p align=\"right\"><i>(click image to enlarge)</i></p></div>";
+    "<a href=\"$blosxom::url$path?image=$next_image\"> next&nbsp;$icon_forward</a>" : 
+     "next&nbsp;$icon_forward" );
+  $photogallery .= "<div class=\"caption\">$caption</div>" if defined $caption;
+  $photogallery .= "<div><a href=\"$full_url\">" . 
+    "<img src=\"$large_url\" class=\"image\" width=\"$large_size[0]\" height=\"$large_size[1]\" /></a></div>";
+  $photogallery .= "<div class=\"permalink\">(click image to enlarge)</div></div>";
 
 }
 
@@ -201,19 +223,26 @@ sub cache_image
 {
   my ( $source_file, $cached_file, $size ) = @_;
 
-  return if ( -e $cached_file ) &&
-            ( ( stat( $source_file ) )[9]  < ( stat( $cached_file ) )[9] );
-
   my $image = new Image::Magick( ) or
     die( "Couldn't instantiate image" );
 
-  my $error = $image->Read( $source_file );
-  die ( $error ) if $error;
+  if ( -e $cached_file && ( ( stat( $source_file ) )[9]  < ( stat( $cached_file ) )[9] ) )
+  {
+    my $error = $image->Read( $cached_file );
+    die ( $error ) if $error;
+  }
+  else
+  {
+    my $error = $image->Read( $source_file );
+    die ( $error ) if $error;
 
-  $image = resize_image( $image, $size );
+    $image = resize_image( $image, $size );
 
-  $error = $image->Write( $cached_file );
-  die ( $error ) if $error;
+    $error = $image->Write( $cached_file );
+    die ( $error ) if $error;
+  }
+
+  return $image->Get('width', 'height');
 }
 
 
@@ -229,7 +258,8 @@ sub resize_image
   if ( $iw > $width )
   {
     $height = ( ( $width * $ih ) / $iw );
-    $image->Scale( geometry => $width."x".$width, width => $width, height => $height );
+    # $image->Scale( geometry => $width."x".$width, width => $width, height => $height );
+    $image->Scale( geometry => $width."x".$width );
   }
 
   return $image;
@@ -323,6 +353,14 @@ sub get_caption
 
 1;
 
+__DATA__
+html photogallery_gallery_start <div class="photogallery"><table class="thumbnails" cellpadding="$pad"><tr>
+html photogallery_next_link <a href="$next_url">next -&gt;&gt;</a>
+html photogallery_list_start [ 
+html photogallery_list_join  | 
+html photogallery_list_item <a href="$curr_url">$curr_number</a>
+html photogallery_list_curr_item <b>$curr_number</b>
+html photogallery_list_end  ] 
 __END__
 
 =head1 NAME
@@ -388,7 +426,7 @@ runs your web server.
 
 To display the photogallery if you have for instance a 'gallery'
 heirarchy, you can simply add this line to your gallery category's
-I<story.html> (or whatever story.I<flavour> you prefer):
+I<story.html> template (or whatever story.I<flavour> you prefer):
 
   $photogallery::photogallery
 
@@ -396,15 +434,20 @@ You might write another story.I<flavour> which omits the plugin but shows
 a representative image plus link, to offer a low-graphics flavour if
 you have a site with many galleries.
 
-Instead of putting it in a directory template, you may prefer to add
+=head2 More flexibility
 
-  $photogallery::photogallery
-
-to a I<story>.txt file such as I<gallery.txt> in each directory where you
+Instead of creating a special category with is own templates, you may
+prefer to add the B<$photogallery::photogallery> variable to an ordinary
+I<story>.txt file such as I<gallery.txt> in each directory where you
 have illustrations for a story.  This has some advantages in that you
-can add the title, meta options and even write a surrounding story all
-in one place, but requires programming something like B<interpolate_fancy>
-or B<storystate> plugins to provide a low graphics flavour.
+can add the title, meta options and even write a surrounding story all in
+one place, but requires programming something like B<interpolate_fancy> 
+with "recurse into story" enabled for low graphics flavours, for instance:
+
+  Here is the gallery introduction.
+  <?$low_graphics>the low graphics alternative goes here</?>
+  <?!$low_graphics><$photogallery::photogallery /></?>
+  Here are some more anecdotes.
 
 =head2 Captions
 
@@ -450,7 +493,7 @@ Photogallery provides the following formatting options:
 
 =head1 VERSION
 
-0.9
+0.9.2
 
 =head1 AUTHOR
 
@@ -489,9 +532,9 @@ gallery dirs).  Even igal film strips ?  ... maybe not, how many would
 prefer better styling options all round ?  Introducing CSS classes as
 a start on this, look into making it .igal.css compatible.
 
-Cache image dimensions so that we can send all image width and heights -
-helps browsers format faster.  In fact this could well be a blosxom API
-function "serve up img with cached size and details".
+Cache image dimensions rather than opening each image each time.  In fact
+this could well be a blosxom API function "serve up img with cached size
+and details".
 
 Enhance to handle any image extension or mime type - default to image/*
 (mogrify should make it easy, leave it up to browser to render).
