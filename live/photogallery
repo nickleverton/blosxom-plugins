@@ -12,7 +12,12 @@
 
 package photogallery;
 
+use warnings;
+use strict;
+
 # --- Configurable variables -----
+
+use vars qw/ $pad $large_url $large_width $large_height $thumbnail_url $thumb_width $thumb_height $image $image_url $full_url $full_width $full_height $caption $prev_image $next_image $icon_back $icon_up $icon_forward /;
 
 # Set this to the fixed width of the story section of your layout.
 # This will affect the size of the thumbnail and large version of each image.
@@ -52,17 +57,17 @@ my $captions_file = ".captions";
 my $captions_filesep = qr/\s+----\s+/;
 
 # Icon URLs for navigation.  Defaults to standard Apache2 icon locations
-# my $icon_back    = '<img src="/icons/left.png" class="icon" alt="<<" />';
-# my $icon_forward = '<img src="/icons/right.png" class="icon" alt=">>" />';
-# my $icon_up      = '<img src="/icons/up.png" class="icon" alt="^" />';
-my $icon_back    = '<img src="/icon/1leftarrow.png" class="icon" width="16" height="16" alt="<<" />';
-my $icon_forward = '<img src="/icon/1rightarrow.png" class="icon" width="16" height="16" alt=">>" />';
-my $icon_up      = '<img src="/icon/1uparrow.png" class="icon" width="16" height="16" alt="<<" />';
+# $icon_back    = '<img src="/icons/left.png" class="icon" alt="<<" />';
+# $icon_forward = '<img src="/icons/right.png" class="icon" alt=">>" />';
+# $icon_up      = '<img src="/icons/up.png" class="icon" alt="^" />';
+$icon_back    = '<img src="/icon/1leftarrow.png" class="icon" width="16" height="16" alt="<<" />';
+$icon_forward = '<img src="/icon/1rightarrow.png" class="icon" width="16" height="16" alt=">>" />';
+$icon_up      = '<img src="/icon/1uparrow.png" class="icon" width="16" height="16" alt="<<" />';
 
 
 # --------------------------------
 
-$start = time( );
+# $start = time( );
 
 use Digest::MD5 qw( md5_hex );
 use CGI qw/ :html4 /;
@@ -88,9 +93,9 @@ sub start
   warn($@), return 0 if $@;
   while (<DATA>) {
     last if /^(__END__)?$/;
-    my($ct, $comp, $txt) = /^(\S+)\s(\S+)\s(.*)$/;
+    my($flavour, $chunk, $txt) = /^(\S+)\s(\S+)\s(.*)$/;
     $txt =~ s/\\n/\n/mg;
-    $template{$ct}{$comp} = $txt;
+    $blosxom::put_template->($chunk, $flavour, $txt);
   }
   return $blosxom::static_or_dynamic eq 'dynamic' ? 1 : 0;
 }
@@ -113,13 +118,35 @@ sub story
   return 1;
 }
 
+# Inspired by blosxom's template handling - load and fill template all in one
+sub fill_template {
+  my ($chunk) = @_;
+
+  # printf STDERR "%s: %s: %s", "$blosxom::datadir/$blosxom::path", $chunk, $blosxom::flavour ;
+
+  my $tmpl = $blosxom::template->( "$blosxom::datadir/$blosxom::path", $chunk, $blosxom::flavour );
+
+  # $tmpl = $blosxom::interpolate->($tmpl);
+  $tmpl =~ s/(\$[\w:\[\]]+)/$1 . "||''"/gee;
+  # print STDERR "fill: $chunk: $tmpl";
+  return $tmpl;
+}
+
+# method to convert un-escaped filesystem filename into escaped URL
+# Must block <, >, &, %, \, also ? and + for use in parameter strings
+# For simplicity we'll escape everything except alphanumeric and punctuation.
+sub escape_filename($) {
+    my ($param) = @_;
+    $param =~ s/([^-_.,:;0-9a-zA-Z])/ '%'.unpack('H*',$1) /eg;
+    return $param;
+}
+
 sub print_gallery_thumbs
 {
   my ( $path, @images ) = @_;
 
-  my $pad = $padding / 2;
-  $photogallery = '<div class="photogallery">';
-  $photogallery .= '<table class="thumbnails" cellpadding="'. $pad .'"><tr>';
+  $pad = $padding / 2;
+  $photogallery = fill_template("photogallery_start");
 
   my $count = 1;
 
@@ -128,26 +155,23 @@ sub print_gallery_thumbs
     my $source_file = "$blosxom::datadir/$path/$image"; 
     my $hashed_file = get_hashed_filename( "$path/$image", 'THUMB' );
     my $cached_file = "$image_dir/$hashed_file";
-    my( @thumb_size ) = cache_image( $source_file, $cached_file, 'THUMB' );
+    ($thumb_width, $thumb_height) = cache_image( $source_file, $cached_file, 'THUMB' );
 
 
-    my $thumbnail_url = "$public_url/$hashed_file";
-    (my $image_url = $image) =~ s/([^-_.,0-9a-zA-Z])/ '%'.unpack('H*',$1) /eg;
-    my $large_url = "$blosxom::url$path?image=$image_url";
-    $photogallery .= '<td>';
-    $photogallery .= "<a href=\"$large_url\">";
-    $photogallery .= "<img class=\"thumb\" src=\"$thumbnail_url\" width=\"$thumb_size[0]\" height=\"$thumb_size[1]\" /></a></td>";
+    $thumbnail_url = "$public_url/$hashed_file";
+    ($image_url = $image) =~ s/([^-_.,0-9a-zA-Z])/ '%'.unpack('H*',$1) /eg;
+    $large_url = "$blosxom::url$blosxom::path/$blosxom::fn.$blosxom::flavour?image=$image_url";
+    $photogallery .= fill_template("photogallery_thumb");
 
     if ( $count % $columns == 0 )
     {
-      $photogallery .= "</tr><tr>";
+      $photogallery .= fill_template("photogallery_row");
     }
 
     $count++;
   }
 
-  $photogallery .= "</tr></table>";
-  $photogallery .= '</div>';
+  $photogallery .= fill_template("photogallery_end");
 }
 
 
@@ -158,32 +182,30 @@ sub print_image
   my $source_file = "$blosxom::datadir/$path/$image"; 
   my $hashed_file = get_hashed_filename( "$path/$image", 'FULL' );
   my $cached_file = "$image_dir/$hashed_file";
-  my $full_url = "$public_url/$hashed_file";
-  my( @full_size ) = cache_image( $source_file, $cached_file, 'FULL' );
+  $full_url = "$public_url/$hashed_file";
+  ($full_width, $full_height) = cache_image( $source_file, $cached_file, 'FULL' );
 
-  my $hashed_file = get_hashed_filename( "$path/$image", 'LARGE' );
-  my $cached_file = "$image_dir/$hashed_file";
-  my $large_url = "$public_url/$hashed_file";
-  my( @large_size ) = cache_image( $source_file, $cached_file, 'LARGE' );
+  $hashed_file = get_hashed_filename( "$path/$image", 'LARGE' );
+  $cached_file = "$image_dir/$hashed_file";
+  $large_url = "$public_url/$hashed_file";
+  ($large_width, $large_height) = cache_image( $source_file, $cached_file, 'LARGE' );
 
-  my $prev_image = get_prev_image( $image, @images );
-  my $next_image = get_next_image( $image, @images );
+  $prev_image = escape_filename( get_prev_image( $image, @images ) );
+  $next_image = escape_filename( get_next_image( $image, @images ) );
   
-  my $caption = get_caption( $path, $image );
+  $caption = get_caption( $path, $image );
 
-  $photogallery =  '<div class="photogallery"><div>$image</div>';
-  $photogallery .= ( $prev_image ? 
-    "<a href=\"$blosxom::url$path?image=$prev_image\">$icon_back&nbsp;prev </a>" : 
-    "$icon_back&nbsp;prev " );
-  $photogallery .= "<a href=\"$blosxom::url$path\">" . 
-    "$icon_up&nbsp;gallery</a> ";
-  $photogallery .= ( $next_image ? 
-    "<a href=\"$blosxom::url$path?image=$next_image\"> next&nbsp;$icon_forward</a>" : 
-     "next&nbsp;$icon_forward" );
-  $photogallery .= "<div class=\"caption\">$caption</div>" if defined $caption;
-  $photogallery .= "<div><a href=\"$full_url\">" . 
-    "<img src=\"$large_url\" class=\"image\" width=\"$large_size[0]\" height=\"$large_size[1]\" /></a></div>";
-  $photogallery .= "<div class=\"permalink\">(click image to enlarge)</div></div>";
+  $photogallery =  fill_template("photogallery_image_start");
+  $photogallery .= fill_template( $prev_image ? 
+    "photogallery_image_prev" :
+    "photogallery_image_prev_empty" );
+  $photogallery .= fill_template("photogallery_image_gallery");
+  $photogallery .= fill_template( $next_image ? 
+    "photogallery_image_next" :
+    "photogallery_image_next_empty" );
+  $photogallery .= fill_template("photogallery_image_caption");
+  $photogallery .= fill_template("photogallery_image");
+  $photogallery .= fill_template("photogallery_image_end");
 
 }
 
@@ -257,8 +279,9 @@ sub resize_image
 
   if ( $iw > $width )
   {
-    $height = ( ( $width * $ih ) / $iw );
+    my $height = ( ( $width * $ih ) / $iw );
     # $image->Scale( geometry => $width."x".$width, width => $width, height => $height );
+    # Use a square bounding box to allow mixing landscape with portrait better.
     $image->Scale( geometry => $width."x".$width );
   }
 
@@ -354,13 +377,19 @@ sub get_caption
 1;
 
 __DATA__
-html photogallery_gallery_start <div class="photogallery"><table class="thumbnails" cellpadding="$pad"><tr>
-html photogallery_next_link <a href="$next_url">next -&gt;&gt;</a>
-html photogallery_list_start [ 
-html photogallery_list_join  | 
-html photogallery_list_item <a href="$curr_url">$curr_number</a>
-html photogallery_list_curr_item <b>$curr_number</b>
-html photogallery_list_end  ] 
+error photogallery_start <div class="photogallery"><table class="thumbnails" cellpadding="$photogallery::pad"><tr>
+error photogallery_thumb <td><a href="$photogallery::large_url"><img class="thumb" src="$photogallery::thumbnail_url" width="$photogallery::thumb_width" height="$photogallery::thumb_height" /></a></td>
+error photogallery_row </tr><tr>
+error photogallery_end </tr></table></div>
+error photogallery_image_start <div class="photogallery"><div>$photogallery::image</div>
+error photogallery_image <div><a href="$full_url"><img src="$large_url" class="image" width="$large_width" height="$large_height" /></a></div>
+error photogallery_image_caption <div class="caption">$photogallery::caption</div>
+error photogallery_image_prev <a href="$blosxom::url$blosxom::path/$blosxom::fn.$blosxom::flavour?image=$photogallery::prev_image">$photogallery::icon_back&nbsp;prev</a>
+error photogallery_image_prev_empty $photogallery::icon_back&nbsp;prev
+error photogallery_image_gallery &nbsp;<a href="$blosxom::url$blosxom::path">$photogallery::icon_up&nbsp;gallery</a>&nbsp;
+error photogallery_image_next <a href="$blosxom::url$blosxom::path/$blosxom::fn.$blosxom::flavour?image=$photogallery::next_image">next&nbsp;$photogallery::icon_forward</a>
+error photogallery_image_next_empty next&nbsp;$photogallery::icon_forward
+error photogallery_image_end <div class="permalink">(click image to enlarge)</div></div>
 __END__
 
 =head1 NAME
