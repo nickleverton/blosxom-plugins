@@ -1,3 +1,4 @@
+#!/usr/bin/perl
 # Blosxom Plugin: photogallery
 # Author(s): DeWitt Clinton <dewitt@unto.net>
 #            Nick Leverton <nick@leverton.org>
@@ -7,7 +8,12 @@
 #
 # Changelog
 # =========
-# 0.9.2 NJL Add image sizes to <IMG> tags for faster layout rendering
+# 0.9.2 NJL 2008-02-17
+#           Use warnings; use strict;
+#           Escape special HTTP characters in filestore filenames (< > & % ? +)
+#           Add image sizes to <IMG> tags for faster layout rendering
+#           Template-ise the strings for easier customisation
+#           Use %blosxom::others hash to locate images if populated by Blosxom
 
 
 package photogallery;
@@ -16,8 +22,6 @@ use warnings;
 use strict;
 
 # --- Configurable variables -----
-
-use vars qw/ $pad $large_url $large_width $large_height $thumbnail_url $thumb_width $thumb_height $image $image_url $full_url $full_width $full_height $caption $prev_image $next_image $icon_back $icon_up $icon_forward /;
 
 # Set this to the fixed width of the story section of your layout.
 # This will affect the size of the thumbnail and large version of each image.
@@ -28,10 +32,6 @@ my $columns = 3;
 
 # Set this to the padding (in pixels) between columns
 my $padding = 10;
-
-# Placeholder var for thumbnail cell width for fixed width columns, fully flowed
-# TODO: not yet implemented
-my $cell_width = undef;
 
 # Set to the images dir (must be writable by the owner of the httpd process)
 my $image_dir = "/var/cache/blosxom/photogallery";
@@ -56,6 +56,11 @@ my %content_types = ( 'jpg' => 'image/jpeg',
 my $captions_file = ".captions";
 my $captions_filesep = qr/\s+----\s+/;
 
+# --- Template variables -----
+
+use vars qw/ $pad $large_url $large_width $large_height $thumbnail_url $thumb_width $thumb_height $image $image_url $full_url $full_width $full_height $caption $prev_image $next_image $icon_back $icon_up $icon_forward /;
+
+# TODO: leave these as defaults - the user can override them in the templates.
 # Icon URLs for navigation.  Defaults to standard Apache2 icon locations
 # $icon_back    = '<img src="/icons/left.png" class="icon" alt="<<" />';
 # $icon_forward = '<img src="/icons/right.png" class="icon" alt=">>" />';
@@ -93,7 +98,9 @@ sub start
   warn($@), return 0 if $@;
   while (<DATA>) {
     last if /^(__END__)?$/;
-    my($flavour, $chunk, $txt) = /^(\S+)\s(\S+)\s(.*)$/;
+    # my($flavour, $chunk, $txt) = /^(\S+)\s(\S+)\s(.*)$/;
+    next if m/^\s*#/;	# ignore template comments
+    my($flavour, $chunk, $txt) = split( /\s+/, $_, 3 );
     $txt =~ s/\\n/\n/mg;
     $blosxom::put_template->($chunk, $flavour, $txt);
   }
@@ -122,22 +129,20 @@ sub story
 sub fill_template {
   my ($chunk) = @_;
 
-  # printf STDERR "%s: %s: %s", "$blosxom::datadir/$blosxom::path", $chunk, $blosxom::flavour ;
-
-  my $tmpl = $blosxom::template->( "$blosxom::datadir/$blosxom::path", $chunk, $blosxom::flavour );
+  my $tmpl = $blosxom::template->( $blosxom::path, $chunk, $blosxom::flavour );
 
   # $tmpl = $blosxom::interpolate->($tmpl);
-  $tmpl =~ s/(\$[\w:\[\]]+)/$1 . "||''"/gee;
-  # print STDERR "fill: $chunk: $tmpl";
+  $tmpl =~ s/(\$[\w:]+)/"defined $1 ? $1 : ''"/gee;
   return $tmpl;
 }
 
-# method to convert un-escaped filesystem filename into escaped URL
+# method to convert un-escaped filesystem filename into escaped URL component.
 # Must block <, >, &, %, \, also ? and + for use in parameter strings
-# For simplicity we'll escape everything except alphanumeric and punctuation.
+# For simplicity we'll escape everything except alphanumeric and simple punctuation.
+# TODO: Internationalised filenames and UTF handling
 sub escape_filename($) {
     my ($param) = @_;
-    $param =~ s/([^-_.,:;0-9a-zA-Z])/ '%'.unpack('H*',$1) /eg;
+    $param =~ s/([^-_.,:;0-9a-zA-Z])/ '%'.uc(unpack('H*',$1)) /eg;
     return $param;
 }
 
@@ -150,16 +155,15 @@ sub print_gallery_thumbs
 
   my $count = 1;
 
-  foreach my $image ( @images )
+  foreach $image ( @images )
   { 
     my $source_file = "$blosxom::datadir/$path/$image"; 
     my $hashed_file = get_hashed_filename( "$path/$image", 'THUMB' );
     my $cached_file = "$image_dir/$hashed_file";
     ($thumb_width, $thumb_height) = cache_image( $source_file, $cached_file, 'THUMB' );
 
-
     $thumbnail_url = "$public_url/$hashed_file";
-    ($image_url = $image) =~ s/([^-_.,0-9a-zA-Z])/ '%'.unpack('H*',$1) /eg;
+    $image_url = escape_filename($image);
     $large_url = "$blosxom::url$blosxom::path/$blosxom::fn.$blosxom::flavour?image=$image_url";
     $photogallery .= fill_template("photogallery_thumb");
 
@@ -177,7 +181,8 @@ sub print_gallery_thumbs
 
 sub print_image
 {
-  my ( $path, $image, @images ) = @_;
+  my ( $path, @images );
+  ( $path, $image, @images ) = @_;
 
   my $source_file = "$blosxom::datadir/$path/$image"; 
   my $hashed_file = get_hashed_filename( "$path/$image", 'FULL' );
@@ -187,6 +192,7 @@ sub print_image
 
   $hashed_file = get_hashed_filename( "$path/$image", 'LARGE' );
   $cached_file = "$image_dir/$hashed_file";
+  $image_url = escape_filename($image);
   $large_url = "$public_url/$hashed_file";
   ($large_width, $large_height) = cache_image( $source_file, $cached_file, 'LARGE' );
 
@@ -313,27 +319,42 @@ sub get_width
 
 sub find_images
 {
-  my ( $path ) = @_;
- 
-  opendir( DIR, $path ) or
-    die( "Couldn't open dir $path: $!" );
+    my ( $path ) = @_;
 
-  my @images;
+    my @images;
 
-  foreach my $dentry ( readdir( DIR ) )
-  {
-    my $can_read = -r "$path/$dentry";
+    # we want to use outer lexical variables in the private inner sub, so it must
+    # be anonymous (see "will not stay shared" in man perldiag for explanation)
+    my $include_images = sub {
+	my $filename = shift;
+	push( @images, "$filename" ) if ( $filename =~ m|\.($imagetypes)$| );
+    };
 
-    if ( $dentry =~ m|\.($imagetypes)$| && $can_read )
-    {
-      push( @images, "$dentry" );
+    # are we running on a recent enough Blosxom to have the %others hash ?
+    my $others;
+    eval { $others = defined %blosxom::others };	# trap "use strict" error if %others doesn't exist
+    if ($others) {
+
+	foreach (keys %blosxom::others) {
+	    &$include_images($1) if $_ =~ m:^$path/([^/]+)$:;
+	}
+
+    } else {
+
+	# we have to do this the clunky way by reading the directory to get its contents
+	opendir( DIR, $path ) or
+	    warn( "Couldn't open dir $path: $!" ), return ();
+
+	foreach my $dentry ( readdir( DIR ) ) {
+	    &$include_images($dentry) if -r "$path/$dentry" ;
+	}
+
+	closedir( DIR ) or
+	    warn( "Couldn't close dir $path: $!" ), return ();
+
     }
-  }
 
-  closedir( DIR ) or
-    die( "Couldn't close dir $path: $!" );
-
-  return image_sort( @images );
+    return image_sort( @images );
 }
 
 
@@ -377,19 +398,34 @@ sub get_caption
 1;
 
 __DATA__
-error photogallery_start <div class="photogallery"><table class="thumbnails" cellpadding="$photogallery::pad"><tr>
-error photogallery_thumb <td><a href="$photogallery::large_url"><img class="thumb" src="$photogallery::thumbnail_url" width="$photogallery::thumb_width" height="$photogallery::thumb_height" /></a></td>
-error photogallery_row </tr><tr>
-error photogallery_end </tr></table></div>
-error photogallery_image_start <div class="photogallery"><div>$photogallery::image</div>
-error photogallery_image <div><a href="$full_url"><img src="$large_url" class="image" width="$large_width" height="$large_height" /></a></div>
-error photogallery_image_caption <div class="caption">$photogallery::caption</div>
-error photogallery_image_prev <a href="$blosxom::url$blosxom::path/$blosxom::fn.$blosxom::flavour?image=$photogallery::prev_image">$photogallery::icon_back&nbsp;prev</a>
-error photogallery_image_prev_empty $photogallery::icon_back&nbsp;prev
-error photogallery_image_gallery &nbsp;<a href="$blosxom::url$blosxom::path">$photogallery::icon_up&nbsp;gallery</a>&nbsp;
-error photogallery_image_next <a href="$blosxom::url$blosxom::path/$blosxom::fn.$blosxom::flavour?image=$photogallery::next_image">next&nbsp;$photogallery::icon_forward</a>
-error photogallery_image_next_empty next&nbsp;$photogallery::icon_forward
-error photogallery_image_end <div class="permalink">(click image to enlarge)</div></div>
+# HTML templates
+default photogallery_start <div class="photogallery"><table class="thumbnails" cellpadding="$photogallery::pad"><tr>
+default photogallery_thumb <td><a href="$photogallery::large_url"><img class="thumb" src="$photogallery::thumbnail_url" width="$photogallery::thumb_width" height="$photogallery::thumb_height" /></a></td>
+default photogallery_row </tr><tr>
+default photogallery_end </tr></table></div>
+default photogallery_image_start <div class="photogallery"><div>$photogallery::image</div>
+default photogallery_image <div><a href="$full_url"><img src="$large_url" class="image" width="$large_width" height="$large_height" /></a></div>
+default photogallery_image_caption <div class="caption">$photogallery::caption</div>
+default photogallery_image_prev <a href="$blosxom::url$blosxom::path/$blosxom::fn.$blosxom::flavour?image=$photogallery::prev_image">$photogallery::icon_back&nbsp;prev</a>
+default photogallery_image_prev_empty $photogallery::icon_back&nbsp;prev
+default photogallery_image_gallery &nbsp;<a href="$blosxom::url$blosxom::path">$photogallery::icon_up&nbsp;gallery</a>&nbsp;
+default photogallery_image_next <a href="$blosxom::url$blosxom::path/$blosxom::fn.$blosxom::flavour?image=$photogallery::next_image">next&nbsp;$photogallery::icon_forward</a>
+default photogallery_image_next_empty next&nbsp;$photogallery::icon_forward
+default photogallery_image_end <div class="permalink">(click image to enlarge)</div></div>
+# RSS templates
+rss photogallery_start <div class="photogallery"><table class="thumbnails" cellpadding="$photogallery::pad"><tr>
+rss photogallery_thumb <td><img class="thumb" src="$photogallery::thumbnail_url" width="$photogallery::thumb_width" height="$photogallery::thumb_height" /></td>
+rss photogallery_row </tr><tr>
+rss photogallery_end </tr></table></div>
+rss photogallery_image_start
+rss photogallery_image
+rss photogallery_image_caption
+rss photogallery_image_prev
+rss photogallery_image_prev_empty
+rss photogallery_image_gallery
+rss photogallery_image_next
+rss photogallery_image_next_empty
+rss photogallery_image_end
 __END__
 
 =head1 NAME
@@ -618,3 +654,6 @@ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
+
+=cut
+# vim:syntax=perl
