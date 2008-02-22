@@ -4,7 +4,7 @@
 # Modified by: Matthijs Kooijman <m.kooijman@student.utwente.nl>
 # and Barijaona Ramaholimihaso
 # and Nick Leverton <nick@leverton.org>
-# Version: 2008-02-16
+# Version: 2008-02-21
 # Documentation: See the bottom of this file or type: 
 # perldoc interpolate_fancy
 
@@ -25,9 +25,13 @@ use vars qw/ $recurse_into_story /;
 # 0 = No (default),  1 = Yes
 $recurse_into_story = 1;
 
-# --------------------------------
+# --- Control variables -----
 
 my $parsing_story = 0 ;
+
+# --- Template variables -----
+# none
+# --------------------------------
 
 
 sub start {
@@ -93,17 +97,13 @@ sub _interpolate_fancy {
   # Variable expansion (unconditional, recursive)
   #
   # e.g. <$var />
-  # while( $template && $template =~ s/<\$([a-zA-Z?]\w+(?:::\w+)*)\s+?\/>/ print(STDERR "$1\n"), "defined \$$1 ? \$$1 : undef"/gsee ) { }
-  { no warnings 'uninitialized';	# TODO FIXME horrible hack to prevent 
-      # warning "Use of uninitialized value in substitution iterator" for nonexistent substitutions,
-      # see http://www.perlmonks.org/?node_id=445734
+  { no warnings 'uninitialized';	# TODO FIXME hack to prevent the warning
+      #   "Use of uninitialized value in substitution iterator"
+      # for nonexistent substitutions, see http://www.perlmonks.org/?node_id=445734
       # Of course what would be nice is some gnarly way to trap uninitialized warnings here
       # and tell you which variable it is you've mis-spelt or which some plugin hasn't set.
-      while( $template
-             && $template =~ s/<\$([a-zA-Z?]\w+(?:::\w+)*(?:(?:->)?{(['"]?)[-\w]+\2})?)\s+?\/>/ "defined \$$1 ? \$$1 : undef"/gsee ) { }
-  }	# horrible warnings hack end
-  # TODO: the above equally horrible RE should be put in a Blosxom:: variable and used here, so that
-  # we don't have to change it here if core Blosxom interpolation pattern is changed again.
+      while( $template && $template =~ s/<\$([a-zA-Z?]\w+(?:::\w+)*)\s+?\/>/ "defined \$$1 ? \$$1 : undef"/gsee ) { }
+  }	# warnings hack end
 
   #
   # Actions 
@@ -135,7 +135,6 @@ sub _resolve_nested {
     my $template = shift;
     my $display  = shift;
   
-    my $var_re = qr/( \w+ (?: :: \w+ )* (?: (?: -> \w* )? { (['"]?) [-\w]+ \2 } )?)/x;
     while (1) {
 	if ($template !~ /(.*?)<\?(\!?\$\w+(?:::\w+)*)(?:\s+?(.+?))?>(.*)/s) {
 	    return $template; # No open tags, normal text
@@ -428,13 +427,12 @@ run your templates through the interpolate2fancy utility
 
 =head1 VERSION
 
-2008-02-16
+2008-02-21
 
 =head1 VERSION HISTORY
 
-2008-02-16 : move to blosxom namespace so that $title etc don't need $blosxom:: prefix;
-           : interpolate hashes/hashrefs as well as scalars (blosxom 2.0.2 compatibility);
-           : "use strict" safe;
+2008-02-21 : move to blosxom namespace so that $title etc don't need $blosxom:: prefix;
+           : "use strict" and "use vars";
            : scrap recurse_into_story defanging in favour of improved recursion logic.
 
 2007-09-27 : enables more than one :: in variable names
