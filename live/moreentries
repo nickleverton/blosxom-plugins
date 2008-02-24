@@ -1,12 +1,18 @@
 # Blosxom Plugin: moreentries    -*- perl -*-
 # Author(s): Jason Clark
-# Version: 0+1i
+# Version: 0.3
 # Blosxom Home/Docs/Licensing: http://www.blosxom.com
 # moreentries plugin Home/Docs/Licensing: 
 #     http://jclark.org/weblog/WebDev/Blosxom/plugins/moreentries
 #
+# Version 0.3
+# Modified 16-Feb-2008 Steve Schwarz
+# Corrected open <img> tag for right.gif
+# Changed selfstyle so style tag need only be configured in one place
+# 
+# Version 0.2
 # Modified 21-Oct-2004 Steve Schwarz
-# http://agilitynerd.com/index.cgi/tech/web/blogging/blosxom/moreentries_mods.html
+# http://tech.agilitynerd.com/blog/web/blogging/blosxom/moreentries_mods.html
 #
 # Added page index feature - 
 # a configurable number of text and/or graphic links to pages preceding and
@@ -17,29 +23,29 @@ package moreentries;
 
 # --- Configurable variables -----
 
-# If set to 1, the html created by $moreentries::links will have simple style attribs
-$selfstyle = 1;
+# Set to the style to add to $moreentries::links will have simple style attribs
+$selfstyle = 'style="padding: 0 3px;"'; # set to '' for no style
 
 # Variables that control how page links are created.
 # HTML is generated into $moreentries::pagelinks
 # How many page links if any should be created - 0 is none
-$numpagelinks = 0; # = 10;
+$numpagelinks = 10;
 
 # Control which types of links are created.
 $textlinks = 1;		# set to 1 to enable text links 0 to disable
 $imagelinks = 1;	# set to 1 to enable image links 0 to disable
 
 # Define an image file to be displayed above the $prevlink
-$prevlinkimage; # = "/images/left.gif";
+$prevlinkimage = "/images/left.gif";
 # Define an image file to be displayed above the $nextlink 
-$nextlinkimage; # = "/images/right.gif";
+$nextlinkimage = "/images/right.gif";
 # Define an image file to be displayed above the current page
-$currentpageimage; # = "/images/text.gif";
+$currentpageimage = "/images/ball.red.gif";
 
 # Define an array of images to use above each page number link
 # the images will be repeated in the order they are placed in the array:
 # Same image above each page link:
-# @pageimages = qw( /images/ball.red.gif );
+@pageimages = qw( /images/ball.gray.gif );
 # Alternating images above each page link:
 @pageimages; # = qw( /images/ball.red.gif /images/ball.gray.gif );
 
@@ -143,12 +149,11 @@ sub filter {
     $nextlink = "$url${appendchar}_start=$next" if $end < $totalposts;
     $nextcount = $totalposts - $end;
     $nextcount = $blosxom::num_entries if $nextcount > $blosxom::num_entries;
-    my $style = $selfstyle? "style='padding:0 15px'" : '';
-    $links = "<div class='moreentries'><span class='prevlink' $style>";
+    $links = "<div class='moreentries'><span class='prevlink' $selfstyle>";
     if (defined($prevlink)) { 
 	$links .= "<a href='$prevlink'>Previous $blosxom::num_entries entries</a> "; 
 	# only add nextlink span if there is a prevlink this causes next to float left instead of right
-	$links .= "</span><span class='nextlink' $style>";
+	$links .= "</span><span class='nextlink' $selfstyle>";
     }
     if (defined($nextlink)) { $links .= " <a href='$nextlink'>Next $nextcount entries</a>"; }
     $links .= "</span></div>";
@@ -168,53 +173,55 @@ sub filter {
 	$endpage = $totalpages if ($endpage > $totalpages);
 
 	# reset self styling
-	$style = $selfstyle? "style='padding:0 5px'" : '';
- 	$pagelinks = "<div class='pagelinks' $style>";
- 	$pagelinks .= "<table border='0' cellpadding='0' cellspacing='0' align='center' $style>";
+ 	$pagelinks = "<div class='pagelinks' $selfstyle>";
+ 	$pagelinks .= "<table border='0' cellpadding='0' cellspacing='0' align='center' $selfstyle>";
 	my $imagelinkhtml, $textlinkhtml;
 	# Insert link to previous page if it exists
  	if (defined($prevlink)) {
 	     if ($textlinks) {
-		 $textlinkhtml = "<td $style><a href='$prevlink'>Previous</a></td>";
+		 $textlinkhtml = "<td $selfstyle align='right'><a href='$prevlink'>Previous $blosxom::num_entries articles</a></td>";
 	     } else {
-		 $textlinkhtml = "<td $style/>";
+		 $textlinkhtml = "<td $selfstyle/>";
 	     }
 	     if (defined($prevlinkimage)) {
-		 $imagelinkhtml = "<td $style><a href='$prevlink' style='border-bottom:none'><img src='$prevlinkimage'></a></td>";
+		 $imagelinkhtml = "<td $selfstyle align='right'><a href='$prevlink' style='border-bottom:none'><img src='$prevlinkimage'/></a></td>";
 	     } else {
-		 $imagelinkhtml = "<td $style/>";
+		 $imagelinkhtml = "<td $selfstyle/>";
 	     }
- 	}
+	 } else { # since I'm centering I need to add the same space as hidden
+	     $textlinkhtml = "<td style='visibility:hidden'>Previous $blosxom::num_entries articles</td>";
+	     $imagelinkhtml = "<td/>";
+	 }
 	# generate text and/or image links for each page in the configured range
 	for (my $page=$startpage; $page<=$endpage; $page++) {
 	    if ($page != $currentpage) {
 		my $link .= "$url${appendchar}_start=" . ((($page-1) * $blosxom::num_entries) + 1);
 		if ($imagelinks and defined(@pageimages)) {
-		    $imagelinkhtml .= "<td $style><a href='$link' style='border-bottom:none'>" .
-			"<img src='$pageimages[$page % ($#pageimages+1)]'></a></td>";
+		    $imagelinkhtml .= "<td $selfstyle><a href='$link' style='border-bottom:none'>" .
+			"<img src='$pageimages[$page % ($#pageimages+1)]'/></a></td>";
 		} elsif ($textlinks) {
-		    $imagelinkhtml .= "<td $style/>";
+		    $imagelinkhtml .= "<td $selfstyle/>";
 		}
 		if ($textlinks) {
-		    $textlinkhtml .=  "<td $style><a href='$link' $style>$page</a></td>";
+		    $textlinkhtml .=  "<td $selfstyle><a href='$link' $selfstyle>$page</a></td>";
 		} elsif ($imagelinks) {
-		    $textlinkhtml .=  "<td $style/>";
+		    $textlinkhtml .=  "<td $selfstyle/>";
 		}
 
 	    } else {	# no link for the current page
 		if ($imagelinks and (defined($currentpageimage) or defined(@pageimages))) {
 		    if (defined($currentpageimage)) {
-			$imagelinkhtml .= "<td $style><img src='$currentpageimage'/></td>";
+			$imagelinkhtml .= "<td $selfstyle><img src='$currentpageimage'/></td>";
 		    } elsif (defined(@pageimages)) {
-			$imagelinkhtml .= "<td $style><img src='$pageimages[$page % ($#pageimages+1)]'></td>"
+			$imagelinkhtml .= "<td $selfstyle><img src='$pageimages[$page % ($#pageimages+1)]'/></td>"
 		    }
 		} elsif ($textlinks) {
-		    $imagelinkhtml .= "<td $style/>";
+		    $imagelinkhtml .= "<td $selfstyle/>";
 		}
 		if ($textlinks) {
-		    $textlinkhtml .= "<td $style>$page</td>";
+		    $textlinkhtml .= "<td $selfstyle><span style='color:red'>$page</span></td>";
 		} elsif ($imagelinks) {
-		    $textlinkhtml .=  "<td $style/>";
+		    $textlinkhtml .=  "<td $selfstyle/>";
 		}
 	    }
 	}
@@ -222,21 +229,25 @@ sub filter {
  	# Insert link and/or image to next page if it exists
  	if (defined($nextlink)) {
 	     if ($textlinks) {
-		 $textlinkhtml .= "<td $style><a href='$nextlink'>Next</a></td>";
+		 $textlinkhtml .= "<td $selfstyle align='left'><a href='$nextlink'>Next $blosxom::num_entries articles</a></td>";
 	     }
 	     else {
-		 $textlinkhtml .= "<td $style/>";
+		 $textlinkhtml .= "<td $selfstyle/>";
 	     }
 	     if (defined($nextlinkimage)) {
-		 $imagelinkhtml .= "<td $style><a href='$nextlink' style='border-bottom:none'><img src='$nextlinkimage'></a></td>";
+		 $imagelinkhtml .= "<td $selfstyle align='left'><a href='$nextlink' style='border-bottom:none'><img src='$nextlinkimage'/></a></td>";
 	     }
 	     else {
-		 $imagelinkhtml .= "<td $style/>";
+		 $imagelinkhtml .= "<td $selfstyle/>";
 	     }
- 	}
+	 } else { # since I'm centering I need to add the same space as hidden
+	     $textlinkhtml .= "<td style='visibility:hidden'>&nbsp;Next $blosxom::num_entries articles</td>";
+	     $imagelinkhtml .= "<td/>";
+	 }
+
 	# Now plugin created table rows
 	$pagelinks .= "<tr align='center'>";
-	$pagelinks .= "<td rowspan='2'>Pages:</td>";
+#	$pagelinks .= "<td rowspan='2'>Pages:</td>";
 	if ($imagelinks) {
 	    $pagelinks .= $imagelinkhtml . "</tr>";
 	    $pagelinks .= "<tr align='center'>" if ($textlinks);
@@ -340,9 +351,9 @@ in it.  This is normally $num_entries, except when there arent enough entries le
 example, if there are 12 posts in the Rants category, and your $num_entries is 10, then
 $morrentries::nextcount will be 2.
 
-There is one config variable, explained above in the discussion of $moreentries::links:
+There are a number of config variables, explained above in the discussion of $moreentries::links:
 
-$moreentries::selfstyle - when set, $moreentries::links will contain simple style attribs.
+$moreentries::selfstyle - when set, $moreentries::links will contain the specified style attributes.
 
 The page links feature has its own configuration variables. The $moreentries::selfstyle
 variable is also applied to the $moreentries::pagelinks.
@@ -374,10 +385,10 @@ the $moreentries::textlinks setting. The html generated if of the format:
 <table border='0' cellpadding='0' cellspacing='0' align='center' style='padding:0 5px'>
 <tr align='center'><td rowspan='2'>Pages:</td>
 <td style='padding:0 5px'><a href='http://localhost/cgi-bin/blosxom.cgi?_start=1' style='border-bottom:none'>
-<img src='/images/left.gif'></a></td>
+<img src='/images/left.gif'/></a></td>
 <td style='padding:0 5px'><img src='/images/text.gif'/></td>
 <td style='padding:0 5px'><a href='http://localhost/cgi-bin/blosxom.cgi?_start=21' style='border-bottom:none'>
-<img src='/images/right.gif'></a></td></tr></table></div>
+<img src='/images/right.gif'/></a></td></tr></table></div>
 
 Where the images used are specified in the following variables:
 
@@ -457,10 +468,11 @@ in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
 copies of the Software, and to permit persons to whom the Software is furnished 
 to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all 
-copies or substantial portions of the Software.THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+The above copyright notice and this permission notice shall be included in all 
+copies or substantial portions of the Software.THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS 
 FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR 
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER 
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION 
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
