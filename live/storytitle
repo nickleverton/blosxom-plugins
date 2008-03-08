@@ -1,11 +1,12 @@
 # Blosxom plugin: storytitle
 # Author(s): Struan Donald <code@exo.org.uk>
 #            Archive titles by Nick Leverton <nick@leverton.org>
-# Version: 0.7
+# Version: 0.8
 # Documentation: see bottom of file or perldoc storytitle
 
 package storytitle;
 
+use warnings;
 use strict;
 use vars qw($sep $right $right_sep $left_sep $page_title $page_title_left $page_title_right);
 
@@ -38,7 +39,9 @@ sub head {
     if (!$dir) {
         $title = (defined $blosxom::path_info_da ? "$blosxom::path_info_da/" : "") . (defined $blosxom::path_info_mo ? "$blosxom::path_info_mo/" : "") . "$blosxom::path_info_yr" ;
         
-    } elsif ($dir =~ m#(.*?)/?([\-\.\w]+)\.(\w+)$# and $2 ne 'index') {
+    # TODO: this is horrible, we shouldn't be parsing URLs at this point, still less
+    # opening files every time to read contents.  Use %entries_cache to store titles.
+    } elsif ($dir =~ m#(.*?)/?([^/]+)\.([^/.]+)$# and $2 ne 'index') {
         my $file = join('/', $blosxom::datadir, $1, "$2.$blosxom::file_extension");
         my $fh = new FileHandle;
         if (-f "$file" && $fh->open("< $file")) {
@@ -118,9 +121,11 @@ You can also individually configure the left and right sided separators with the
 
 =head1 VERSION
 
-0.7
+0.8
 
 =head2 CHANGES
+
+0.8 - modules and "use strict" safe
 
 0.7 - Provide title for Category pages as well as Stories and Archive pages.
     - Also included rus.berrett's patch to remove formatting,
