@@ -1,43 +1,57 @@
+#!/usr/bin/perl
 # Blosxom plugin: storytitle
 # Author(s): Struan Donald <code@exo.org.uk>
 #            Archive titles by Nick Leverton <nick@leverton.org>
-# Version: 0.7
+# Version: 0.8
 # Documentation: see bottom of file or perldoc storytitle
 
 package storytitle;
 
+use warnings;
+use strict;
+
 # ------------------ Config variables ---------------------
+
+use vars qw/ $sep $right $right_sep $left_sep /;
 
 # default separator to add to story title
 
-my $sep = ' : ';
+$sep = ' : ';
 
 # do we default to the right aligned title
 # 1 for right aligned, 0 for left
 
-my $right = 1;
+$right = 1;
 
 # separator for right aligned title 
 
-my $right_sep = ''
+$right_sep = ''
     || $sep;
 
 # separator for left aligned title
 
-my $left_sep = ''
+$left_sep = ''
     || $sep;
+
+# ------------------ Template variables ---------------------
+
+use vars qw/ $page_title $page_title_right $page_title_left /;
 
 # ---------------------------------------------------------
 
 sub start { 1; }
+
 sub head {
-    my ($p, $dir, $head) = @_;
+    my ($pkg, $dir, $head) = @_;
     my $title;
     if (!$dir) {
-        $title = "$blosxom::path_info_yr $blosxom::path_info_mo";
+        $title = ($blosxom::path_info_yr || "") . " " . ($blosxom::path_info_mo || ""); # archive or root dir
         
-    } elsif ($dir =~ m#(.*?)/?([\-\.\w]+)\.(\w+)$# and $2 ne 'index') {
-        $file = join('/', $blosxom::datadir, $1, "$2.$blosxom::file_extension");
+    # TODO: this is horrible, we shouldn't be parsing URLs at this point, still less
+    # opening files every time to read contents.  Use %entries_cache to store titles.
+    } elsif ($dir =~ m#(.*?)/?([^/]+)\.([^/.]+)$# and $2 ne 'index') {
+        my $file = join('/', $blosxom::datadir, $1, "$2.$blosxom::file_extension");
+	# print STDERR "storytitle: file=$file";
         my $fh = new FileHandle;
         if (-f "$file" && $fh->open("< $file")) {
             chomp($title = <$fh>);
@@ -52,6 +66,7 @@ sub head {
 	$title =~ s:/:$sep:g;
     }
 
+    # print STDERR "storytitle: title=$title";
     if (defined $title and $title =~ /\S/) {
         $page_title_right = $right_sep . $title;
         $page_title_left = $title . $left_sep;
@@ -116,9 +131,11 @@ You can also individually configure the left and right sided separators with the
 
 =head1 VERSION
 
-0.7
+0.8
 
 =head2 CHANGES
+
+0.8 - modules and "use strict" safe
 
 0.7 - Provide title for Category pages as well as Stories and Archive pages.
     - Also included rus.berrett's patch to remove formatting,
