@@ -1,0 +1,117 @@
+#!/usr/bin/perl
+# Blosxom Plugin: last_modified
+#
+# Changelog
+# ---------
+# Author(s): Nick Leverton <nick@leverton.org>
+#
+# Version: 2008-06-06 (v0+1i) Nick Leverton <nick@leverton.org>
+#	First version.
+# 
+# Documentation: See the bottom of this file or type: perldoc last_modified
+
+package last_modified;
+
+use warnings;
+use strict;
+
+# --- Configurable variables -----
+# none
+
+# --- Control variables -----
+
+# Date/time to use for last-modified header
+# (normally timestamp of newest story but other plugins can override this variable)
+use vars qw/ $last_modified /;
+
+# --- Template variables -----
+# none
+# --------------------------------
+
+use HTTP::Date;
+
+sub start {
+    undef $last_modified;
+    1;
+}
+
+
+sub last {
+    foreach my $timestamp (values %blosxom::files) {
+        $last_modified = $timestamp
+	    unless defined $last_modified && $last_modified >= $timestamp;
+    }
+    $blosxom::header->{ '-last-modified' } = time2str( $last_modified )
+        if defined $last_modified;
+}
+
+1;
+
+__END__
+
+=head1 NAME
+
+Blosxom Plug-in: last_modified
+
+=head1 SYNOPSIS
+
+Adds an HTTP Last-Modified header to each Blosxom generated page.
+This reduces your bandwidth needs by permitting browsers and spiders
+to check for updates to older stories with an HTTP If-Modified-Since,
+rather than retrieving the full page each time.  It also allows proxies
+such as Squid to cache older entries whilst refreshing correctly when
+newer ones are added.
+
+By default this plugin will scan the list of stories and use the timestamp
+of the most recent one as the Last-Modified header.
+
+The plugin uses the timestamps in B<%blosxom::files>, so it is compatible
+with B<entries_index_tagged> and other plugins which set the last_modified
+time  as well as with standard Blosxom use of the I<storyfile.txt>
+modification time.
+
+Other plugins may if they wish place a standard Unix timestamp in
+B<$last_modified::last_modified> to override the default Last-Modified time.
+
+=head1 VERSION
+
+2008-06-06 (v0+1i)
+
+=head1 AUTHORS
+
+Nick Leverton <nick@leverton.org>, L<http://www.leverton.org/blosxom/>
+
+=head1 SEE ALSO
+
+This plugin: L<http://www.leverton.org/blosxom/Software/Projects/Blosxom/last_modified.html>
+
+Blosxom Plugin Docs: L<http://www.raelity.org/apps/blosxom/plugin.shtml>
+
+=head1 BUGS
+
+Address bug reports and comments to the Blosxom mailing list,
+blosxom-devel@lists.sourceforge.net.
+
+=head1 LICENSE
+
+This Blosxom Plug-in Copyright 2008, Nick Leverton
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+=cut
