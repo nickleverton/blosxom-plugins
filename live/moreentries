@@ -1,9 +1,16 @@
+#!/usr/bin/perl
 # Blosxom Plugin: moreentries    -*- perl -*-
 # Author(s): Jason Clark
-# Version: 0.3
+# Version: 0.4
 # Blosxom Home/Docs/Licensing: http://www.blosxom.com
 # moreentries plugin Home/Docs/Licensing: 
 #     http://jclark.org/weblog/WebDev/Blosxom/plugins/moreentries
+#
+# Version 0.4
+# Modified 05-Jun-2008 Nick Leverton <nick@leverton.org>
+# Quote path regexp with \Q to avoid interpolation problems in special characters.
+# Fixup for use warnings, use strict and make module-safe by qualifying blosxom:: names.
+# Add $prevcount in case we weren't starting with a multiple of num_entries stories.
 #
 # Version 0.3
 # Modified 16-Feb-2008 Steve Schwarz
@@ -21,7 +28,14 @@
 #
 package moreentries;
 
+use warnings;
+use strict;
+
 # --- Configurable variables -----
+
+use vars qw/ $selfstyle /;
+use vars qw/ $numpagelinks $textlinks $imagelinks $prevlinkimage $nextlinkimage /;
+use vars qw/ $currentpageimage @pageimages /;
 
 # Set to the style to add to $moreentries::links will have simple style attribs
 $selfstyle = 'style="padding: 0 3px;"'; # set to '' for no style
@@ -47,11 +61,18 @@ $currentpageimage = "/images/ball.red.gif";
 # Same image above each page link:
 @pageimages = qw( /images/ball.gray.gif );
 # Alternating images above each page link:
-@pageimages; # = qw( /images/ball.red.gif /images/ball.gray.gif );
+# @pageimages = qw( /images/ball.red.gif /images/ball.gray.gif );
+
+# --- Control variables -----
+
+use vars qw/ $active $totalposts $start $end $prevlink $nextlink $prevcount $nextcount $links /;
+use vars qw/ $totalpages $currentpage $pagelinks /;
+
+# --- Template variables -----
+
+# none
 
 # --------------------------------
-
-use vars qw/ $active $totalposts $start $end $prevlink $nextlink $nextcount $links $selfstyle $totalpages $currentpage $pagelinks /;
 
 sub start {
   return 1;
@@ -71,7 +92,8 @@ sub filter {
     $active = undef;
     $start = $end = $prevlink = $nextlink = undef;
     # $num_entries is ignored for date-based urls, or if num_entries not in use
-    return 1 if $blosxom::path_info_yr =~ /\d/ or !defined($blosxom::num_entries) or $blosxom::num_entries < 1;
+    return 1 if (defined $blosxom::path_info_yr && $blosxom::path_info_yr =~ /\d/)
+             or !defined($blosxom::num_entries) or $blosxom::num_entries < 1;
     my $pos;
     for(my $i=0;$i<@blosxom::plugins;$i++) { 
         if($blosxom::plugins[$i] eq 'moreentries') {
@@ -99,13 +121,13 @@ sub filter {
     foreach my $path_file (keys %{$files}) {
         my ($path,$fn) = $path_file =~ m!^$blosxom::datadir/(?:(.*)/)?(.*)\.$blosxom::file_extension!;
         # Only stories in the right hierarchy
-        ($path =~ /^$currentdir/ or $path_file eq "$blosxom::datadir/$currentdir") and next;
-#print STDERR "path='$path', curdir='$currentdir', pathfile='$path_file', ddir='$datadir'\n";
+        next if (defined $path && $path =~ /^\Q$currentdir/) or $path_file eq "$blosxom::datadir/$currentdir";
+	#print STDERR "path='$path', fn='$fn', curdir='$currentdir', pathfile='$path_file', ddir='$blosxom::datadir'\n";
         delete $files->{$path_file};
     }
 
     $totalposts = scalar(keys %{$files});
-#print STDERR "TOTALPOSTS='$totalposts'\n";    
+    #print STDERR "TOTALPOSTS='$totalposts'\n";    
 
     return 1 if $totalposts <= $blosxom::num_entries;
 
@@ -120,7 +142,15 @@ sub filter {
     
     # Allow for the first encountered plugin::sort subroutine to override the
     # default built-in sort subroutine
-    my $tmp; foreach my $plugin ( @plugins ) { $plugins{$plugin} > 0 and $plugin->can('sort') and defined($tmp = $plugin->sort()) and $sort = $tmp and last; }
+    my $tmp; 
+    foreach my $plugin ( @blosxom::plugins ) { 
+        if ($blosxom::plugins{$plugin} > 0 and $plugin->can('sort')) {
+            if (defined($tmp = $plugin->sort())) {
+                $sort = $tmp;
+                last;
+             }
+        }
+    }
   
     my @sorted = &$sort($files, $others);
     $start = (blosxom::param("_start") or 1);
@@ -147,11 +177,12 @@ sub filter {
     my $next = $end + 1;
     $prevlink = "$url${appendchar}_start=$prev" if $start > 1;
     $nextlink = "$url${appendchar}_start=$next" if $end < $totalposts;
+    $prevcount = $start - $prev;
     $nextcount = $totalposts - $end;
     $nextcount = $blosxom::num_entries if $nextcount > $blosxom::num_entries;
     $links = "<div class='moreentries'><span class='prevlink' $selfstyle>";
     if (defined($prevlink)) { 
-	$links .= "<a href='$prevlink'>Previous $blosxom::num_entries entries</a> "; 
+	$links .= "<a href='$prevlink'>Previous $prevcount entries</a> "; 
 	# only add nextlink span if there is a prevlink this causes next to float left instead of right
 	$links .= "</span><span class='nextlink' $selfstyle>";
     }
@@ -175,7 +206,7 @@ sub filter {
 	# reset self styling
  	$pagelinks = "<div class='pagelinks' $selfstyle>";
  	$pagelinks .= "<table border='0' cellpadding='0' cellspacing='0' align='center' $selfstyle>";
-	my $imagelinkhtml, $textlinkhtml;
+	my( $imagelinkhtml, $textlinkhtml );
 	# Insert link to previous page if it exists
  	if (defined($prevlink)) {
 	     if ($textlinks) {
@@ -305,7 +336,7 @@ That's it; you should now have next & previous functionality.
 
 To enable paged access set the $moreentries::numpagelinks to a non-zero value 
 to control how many links to pages preceding and following the current page 
-will be generated. Add the $moreentriess::pagelinks to your head or foot 
+will be generated. Add the $moreentries::pagelinks to your head or foot 
 template to see the links. You can use this independently from 
 $moreentries::links.
 
@@ -333,7 +364,7 @@ The output of $moreentries::links will look like this:
  
 The embedded style prevents the links from being right next to each other.  This output
 is sufficient for a quick drop-in.  If you'd like to control CSS styles yourself, 
-there is a confi variable ( $selfstyle ) that controls this, just set it to 0.
+there is a config variable ( $selfstyle ) that controls this, just set it to 0.
 
 If you want even more control over your output, there are some additional variables
 you can use:
@@ -341,6 +372,11 @@ you can use:
 $moreentries::prevlink - if $moreentries::start is not 1, this will contain an
 URL to move to the previous batch of entries.  Will be undef if no Previous batch
 (i.e., $moreentries::start =1)
+
+$moreentries::prevcount - If there is a previous batch, this contains the number of posts
+in it.  This is normally $num_entries, except when there arent enough entries.  For example,
+if this batch starts at post 21 in the Rants category, and your $num_entries is 15, then
+$morrentries::prevcount will be 5.
 
 $moreentries::nextlink - if $moreentries::end < $morrentries::totalposts, this will
 contain an URL to the next batch of entries.  Will be undef if no Next batch
@@ -434,21 +470,21 @@ that will be displayed.  This makes redundant much of the code that runs in blos
 
 =head1 Version
 
-0+1i
+0+4i
 
 =head1 Author
 
 Jason Clark  (jason@jclark.org; http://jclark.org/weblog)
 
-=Head1 Acknowledgements
+=head1 Acknowledgements
 
 Thanks to Fletcher T. Penny (http://fletcher.freeshell.org/) for helping test the plugin.
 
 =head1 See Also
 
-Blosxom Home/Docs/Licensing: http://www.blosxom.com/
+Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net
 
-Blosxom Plugin Docs: http://www.blosxom.com/documentation/users/plugins.html
+Blosxom Plugin Docs: http://blosxom.sourceforge.net/documentation/users/plugins.html
 
 =head1 Bugs
 
