@@ -1,6 +1,8 @@
+#! /usr/bin/perl -w
 # Blosxom Plugin: directorybrowse
 # Author(s): Matt Melton
-# Version: 0.1
+# Amended:   URI escaping by Nick Leverton <nick@leverton.org>, v0.2 2008-09-14
+# Version: 0.2
 # Home/Docs/Licensing: contact at http://my-security.net
 
 package directorybrowse;
@@ -17,6 +19,8 @@ my $href_parameters = '';
 # --------------------------------
 
 use CGI qw/:standard/;
+use HTML::Entities;
+use URI::Escape;
 
 $browseable_path;
 
@@ -30,14 +34,14 @@ sub story {
 
 	$browseable_path = '';
 
-	my @tree = split(/\//, $path);
+	my @tree = map encode_entities($_), split(/\//, $path);
 	my $urlelements = '';
 	my $i = 0;
 
 	foreach my $element (@tree) {
 		next if !$element;
-		$urlelements = join('/', @tree[0..$i]);
-		$browseable_path .= qq{ / <a href="$blosxom::url$urlelements/$element" $href_parameters>$element</a>};
+		$urlelements = uri_escape( join('/', @tree[0..$i], $element), ' ?<>' );
+		$browseable_path .= qq{ / <a href="$blosxom::url$urlelements" $href_parameters>$element</a>};
 		$i++;
 	}
  	1;
