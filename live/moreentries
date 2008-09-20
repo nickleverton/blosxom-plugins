@@ -1,11 +1,15 @@
 #!/usr/bin/perl
 # Blosxom Plugin: moreentries    -*- perl -*-
 # Author(s): Jason Clark
-# Version: 0.4
+# Version: 0.4.1
 # Blosxom Home/Docs/Licensing: http://www.blosxom.com
 # moreentries plugin Home/Docs/Licensing: 
 #     http://jclark.org/weblog/WebDev/Blosxom/plugins/moreentries
 #
+# Version 0.4.1
+# Modified 20-Sep-2008 Nick Leverton <nick@leverton.org>
+# Use &amp; instead of naked & for adding the _start parameter to existing query
+
 # Version 0.4
 # Modified 05-Jun-2008 Nick Leverton <nick@leverton.org>
 # Quote path regexp with \Q to avoid interpolation problems in special characters.
@@ -171,7 +175,7 @@ sub filter {
     $url =~ s/[&?;]-\w+=\d+//g;
     $url =~ s/\?\s*$//;
 
-    my $appendchar = $url =~ /\?/ ? "&" : "?";
+    my $appendchar = $url =~ /\?/ ? "&amp;" : "?";
     my $prev = $start - $blosxom::num_entries;
     $prev = 1 if $prev < 0;
     my $next = $end + 1;
