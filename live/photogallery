@@ -2,12 +2,19 @@
 # Blosxom Plugin: photogallery
 # Author(s): DeWitt Clinton <dewitt@unto.net>
 #            Nick Leverton <nick@leverton.org>
-# Version: 0.9.2
+# Version: 0.9.2.2
 # Documentation: See the bottom of this file or 
 # type: perldoc photogallery
 #
 # Changelog
 # =========
+# 0.9.2.2 NJL 2008-09-20
+#           Adjust thumbnail generation to suppress empty <tr></tr>
+#           when the final row of thumbs exactly filled a line.
+# 0.9.2.1 NJL 2008-08-04
+#           Add <th> row to clear to left below permalink or floating
+#           boxes.  Change the <th><br clear=left> parameter to right
+#           if you have a left-hand sidebar.
 # 0.9.2 NJL 2008-02-17
 #           Use warnings; use strict;
 #           Escape special HTTP characters in filestore filenames (< > & % ? +)
@@ -153,10 +160,15 @@ sub print_gallery_thumbs
   $pad = $padding / 2;
   $photogallery = fill_template("photogallery_start");
 
-  my $count = 1;
+  my $count = 0;
 
   foreach $image ( @images )
   { 
+    if ( $count && $count % $columns == 0 )
+    {
+      $photogallery .= fill_template("photogallery_row");
+    }
+
     my $source_file = "$blosxom::datadir/$path/$image"; 
     my $hashed_file = get_hashed_filename( "$path/$image", 'THUMB' );
     my $cached_file = "$image_dir/$hashed_file";
@@ -164,13 +176,8 @@ sub print_gallery_thumbs
 
     $thumbnail_url = "$public_url/$hashed_file";
     $image_url = escape_filename($image);
-    $large_url = "$blosxom::url$blosxom::path/$blosxom::fn.$blosxom::flavour?image=$image_url";
+    $large_url = "$blosxom::url$blosxom::path_uri/$blosxom::fn_uri.$blosxom::flavour?image=$image_url";
     $photogallery .= fill_template("photogallery_thumb");
-
-    if ( $count % $columns == 0 )
-    {
-      $photogallery .= fill_template("photogallery_row");
-    }
 
     $count++;
   }
@@ -399,12 +406,12 @@ sub get_caption
 
 __DATA__
 # HTML templates
-default photogallery_start <div class="photogallery"><table class="thumbnails" cellpadding="$photogallery::pad"><tr>
-default photogallery_thumb <td><a href="$photogallery::large_url"><img class="thumb" src="$photogallery::thumbnail_url" width="$photogallery::thumb_width" height="$photogallery::thumb_height" /></a></td>
+default photogallery_start <div class="photogallery"><table class="thumbnails" cellpadding="$photogallery::pad"><tr><th></th><th></th><th><br clear="left" /></th></tr><tr>
+default photogallery_thumb <td><a href="$photogallery::large_url"><img class="thumb" src="$photogallery::thumbnail_url" width="$photogallery::thumb_width" height="$photogallery::thumb_height" alt="" /></a></td>
 default photogallery_row </tr><tr>
 default photogallery_end </tr></table></div>
 default photogallery_image_start <div class="photogallery"><div>$photogallery::image</div>
-default photogallery_image <div><a href="$full_url"><img src="$large_url" class="image" width="$large_width" height="$large_height" /></a></div>
+default photogallery_image <div><a href="$full_url"><img src="$large_url" class="image" width="$large_width" height="$large_height" alt="Full size image" /></a></div>
 default photogallery_image_caption <div class="caption">$photogallery::caption</div>
 default photogallery_image_prev <a href="$blosxom::url$blosxom::path/$blosxom::fn.$blosxom::flavour?image=$photogallery::prev_image">$photogallery::icon_back&nbsp;prev</a>
 default photogallery_image_prev_empty $photogallery::icon_back&nbsp;prev
@@ -414,7 +421,7 @@ default photogallery_image_next_empty next&nbsp;$photogallery::icon_forward
 default photogallery_image_end <div class="permalink">(click image to enlarge)</div></div>
 # RSS templates
 rss photogallery_start <div class="photogallery"><table class="thumbnails" cellpadding="$photogallery::pad"><tr>
-rss photogallery_thumb <td><img class="thumb" src="$photogallery::thumbnail_url" width="$photogallery::thumb_width" height="$photogallery::thumb_height" /></td>
+rss photogallery_thumb <td><img class="thumb" src="$photogallery::thumbnail_url" width="$photogallery::thumb_width" height="$photogallery::thumb_height" alt="" /></td>
 rss photogallery_row </tr><tr>
 rss photogallery_end </tr></table></div>
 rss photogallery_image_start
@@ -558,7 +565,7 @@ Photogallery provides the following formatting options:
 
 =head1 VERSION
 
-0.9.2
+0.9.2.2
 
 =head1 AUTHOR
 
@@ -572,7 +579,7 @@ needed guidance (and a good number of code snippits).
 Thanks to Chaz Hickman, who spotted (and corrected) a number of bugs
 and provided invaluable feedback on the documentation.
 
-Igal .captions and some docs by
+Igal .captions with igal compatible CSS formatting and some docs by
 Nick Leverton <nick@leverton.org> L<http://www.leverton.org/blosxom>
 
 =head1 SEE ALSO
