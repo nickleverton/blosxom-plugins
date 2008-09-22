@@ -1,9 +1,13 @@
+#!/usr/bin/perl
 # Blosxom Plugin: categorytree
 # Author(s): Eric Davis <edavis <at> foobargeek <dot> com>
 # Version: $Id: categorytree,v 1.7 2004/02/27 20:53:58 edavis Exp $
 # Documentation: See the bottom of this file or type: perldoc categorytree
 
 # Modifications for indentation and counts by: Eric Davis http://www.foobargeek.com
+
+# Version 1.8 modified for tree depth and HTML/URI escaping
+# 20th September 2008 by Nick Leverton <nick@leverton.org>
 
 package categorytree;
 
@@ -38,12 +42,16 @@ my $iDontWantSlashes = 0;
 # replaced with when $iDontWantSlashes is 1.
 my $slashReplacement = " :: ";
 
+# If defined and non-zero, limits the maximum depth of the displayed tree.
+my $maxDepth         = 2;
+
 # --------------------------------
 
 $display; # $categorytree::display 
 
-use File::Find;
 use File::Basename;
+use HTML::Entities;
+use URI::Escape;
 
 sub start
 {
@@ -83,16 +91,21 @@ sub filter
     {
         if (($categorycount{$thing} != 0) || $showCategoryIfZero)
         {
-            my $displayString = $thing;
+	    
+            my $displayString = encode_entities($thing);
+	    $thing_uri = uri_escape($displayString, ' ?<>');
+
             my $thisin;
+            my $thisDepth = 1;
 
             if ($iWantIndents)
             {
                 $displayString =~ s!^\/!!;
 
-                while ($displayString =~ s!((&nbsp\;)*)\w+\/!$1!)
+                while ($displayString =~ s![^\/]+\/!!)
                 {
                     $thisin .= $indent;
+                    $thisDepth++;
                 }
             }
             elsif ($iDontWantSlashes)
@@ -100,8 +113,9 @@ sub filter
                 $displayString =~ s!^\/!!;
                 $displayString =~ s!\/!$slashReplacement!g;
             }
+	    next if $maxDepth && $maxDepth < $thisDepth;
 
-            $display .= qq{<li class="categorytree_item">$thisin<a href="$blosxom::url$thing">$displayString</a>};
+            $display .= qq{<li class="categorytree_item">$thisin<a href="$blosxom::url$thing_uri">$displayString</a>};
             if ($iWantTheCount)
             {
                 if (($categorycount{$thing} != 0) || $showCountIfZero)
@@ -161,11 +175,14 @@ priority naming scheme.
 
 =head1 VERSION
 
+1.8    Allow limiting of tree depth
+       Escape HTML entities and HTTP urls.
+
+=head1 VERSION HISTORY
+
 1.7    now runs during blosxom filter and no longer uses File::Find
        now much faster generation times since disk access is no more
        fixed bug with indents (links were underlining indent spaces)
-
-=head1 VERSION HISTORY
 
 1.6    fixed bug where File::Find output being parsed incorrectly
 
