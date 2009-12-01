@@ -1,8 +1,8 @@
 #!/usr/bin/perl
 # Blosxom Plugin: textile2					   -*- perl -*-
 # Author: Todd Larason (jtl@molehill.org)
-#            Contributions by Nick Leverton <nick@leverton.org>
-# Version: 0+2i
+#         Contributions by Nick Leverton <nick@leverton.org>
+# Version: 0+3i
 # Blosxom Home/Docs/Licensing: http://www.raelity.org/blosxom
 # Textile plugin Home/Docs/Licensing:
 #   http://molelog.molehill.org/blox/Computers/Internet/Web/Blosxom/Plugins/Textile/
