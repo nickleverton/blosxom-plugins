@@ -1,11 +1,15 @@
 #!/usr/bin/perl
 # Blosxom Plugin: moreentries    -*- perl -*-
 # Author(s): Jason Clark
-# Version: 0.4.1
 # Blosxom Home/Docs/Licensing: http://www.blosxom.com
 # moreentries plugin Home/Docs/Licensing: 
 #     http://jclark.org/weblog/WebDev/Blosxom/plugins/moreentries
 #
+# Version 0.4.2
+# Modified 27-Mar-2010 Nick Leverton <nick@leverton.org>
+# Replace blosxom::self_url by blosxom::url/$blosxom::path_info.
+#   Thanks to Carsten Agger <agger@c.dk>
+
 # Version 0.4.1
 # Modified 20-Sep-2008 Nick Leverton <nick@leverton.org>
 # Use &amp; instead of naked & for adding the _start parameter to existing query
@@ -170,7 +174,7 @@ sub filter {
     }
     
     #setup prevlink, nextlink
-    my $url = blosxom::self_url();
+    my $url = $blosxom::url."/".$blosxom::path_info;
     $url =~ s/[&\?;]_start=\d+//g;
     $url =~ s/[&?;]-\w+=\d+//g;
     $url =~ s/\?\s*$//;
