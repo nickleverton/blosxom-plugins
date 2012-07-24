@@ -2,12 +2,14 @@
 # Blosxom Plugin: photogallery
 # Author(s): DeWitt Clinton <dewitt@unto.net>
 #            Nick Leverton <nick@leverton.org>
-# Version: 0.9.2.2
+# Version: 0.9.2.3
 # Documentation: See the bottom of this file or 
 # type: perldoc photogallery
 #
 # Changelog
 # =========
+# 0.9.2.3 NJL 2008-12-21
+#           Use new $blosxom::load_templates routine
 # 0.9.2.2 NJL 2008-09-20
 #           Adjust thumbnail generation to suppress empty <tr></tr>
 #           when the final row of thumbs exactly filled a line.
@@ -103,14 +105,7 @@ sub start
 {
   eval { require Image::Magick; };
   warn($@), return 0 if $@;
-  while (<DATA>) {
-    last if /^(__END__)?$/;
-    # my($flavour, $chunk, $txt) = /^(\S+)\s(\S+)\s(.*)$/;
-    next if m/^\s*#/;	# ignore template comments
-    my($flavour, $chunk, $txt) = split( /\s+/, $_, 3 );
-    $txt =~ s/\\n/\n/mg;
-    $blosxom::put_template->($chunk, $flavour, $txt);
-  }
+  $blosxom::load_templates->(\*DATA);
   return $blosxom::static_or_dynamic eq 'dynamic' ? 1 : 0;
 }
 
@@ -339,7 +334,7 @@ sub find_images
 
     # are we running on a recent enough Blosxom to have the %others hash ?
     my $others;
-    eval { $others = defined %blosxom::others };	# trap "use strict" error if %others doesn't exist
+    eval { $others = \%blosxom::others };	# trap "use strict" error if %others doesn't exist
     if ($others) {
 
 	foreach (keys %blosxom::others) {
@@ -565,7 +560,7 @@ Photogallery provides the following formatting options:
 
 =head1 VERSION
 
-0.9.2.2
+0.9.2.3
 
 =head1 AUTHOR
 
