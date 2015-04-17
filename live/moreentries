@@ -5,6 +5,11 @@
 # moreentries plugin Home/Docs/Licensing: 
 #     http://jclark.org/weblog/WebDev/Blosxom/plugins/moreentries
 #
+# Version 0.4.3
+# Modified 17-Apr-2015 Nick Leverton <nick@leverton.org>
+# Fix deprecated if defined(@array) calls, just use if (@array) to reduce noise
+# from Perl in error.log
+#
 # Version 0.4.2
 # Modified 27-Mar-2010 Nick Leverton <nick@leverton.org>
 # Replace blosxom::self_url by blosxom::url/$blosxom::path_info.
@@ -235,7 +240,7 @@ sub filter {
 	for (my $page=$startpage; $page<=$endpage; $page++) {
 	    if ($page != $currentpage) {
 		my $link .= "$url${appendchar}_start=" . ((($page-1) * $blosxom::num_entries) + 1);
-		if ($imagelinks and defined(@pageimages)) {
+		if ($imagelinks and (@pageimages)) {
 		    $imagelinkhtml .= "<td $selfstyle><a href='$link' style='border-bottom:none'>" .
 			"<img src='$pageimages[$page % ($#pageimages+1)]'/></a></td>";
 		} elsif ($textlinks) {
@@ -248,10 +253,10 @@ sub filter {
 		}
 
 	    } else {	# no link for the current page
-		if ($imagelinks and (defined($currentpageimage) or defined(@pageimages))) {
+		if ($imagelinks and (defined($currentpageimage) or (@pageimages))) {
 		    if (defined($currentpageimage)) {
 			$imagelinkhtml .= "<td $selfstyle><img src='$currentpageimage'/></td>";
-		    } elsif (defined(@pageimages)) {
+		    } elsif (@pageimages) {
 			$imagelinkhtml .= "<td $selfstyle><img src='$pageimages[$page % ($#pageimages+1)]'/></td>"
 		    }
 		} elsif ($textlinks) {
