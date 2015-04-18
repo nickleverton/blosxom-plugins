@@ -2,12 +2,14 @@
 # Blosxom Plugin: photogallery
 # Author(s): DeWitt Clinton <dewitt@unto.net>
 #            Nick Leverton <nick@leverton.org>
-# Version: 0.9.2.4
+# Version: 0.9.2.5
 # Documentation: See the bottom of this file or 
 # type: perldoc photogallery
 #
 # Changelog
 # =========
+# 0.9.2.5 NJL 2015-04-18
+#           More cleanups: CGI::Param warning
 # 0.9.2.4 NJL 2013-11-29
 #           Cleanups for recent Perl
 # 0.9.2.3 NJL 2008-12-21
@@ -119,7 +121,7 @@ sub story
 
   if ( CGI::param( 'image' ) )
   {
-    print_image( $path, CGI::param( 'image' ), @images );
+    print_image( $path, scalar CGI::param( 'image' ), @images );
   }
   else
   {
