@@ -9,6 +9,9 @@
 # Version 1.8 modified for tree depth and HTML/URI escaping
 # 20th September 2008 by Nick Leverton <nick@leverton.org>
 
+# Version 1.9 modified to escape the category URI
+# 24th April 2015 by Nick Leverton <nick@leverton.org>
+
 package categorytree;
 
 # --- Configurable variables -----
@@ -93,7 +96,7 @@ sub filter
         {
 	    
             my $displayString = encode_entities($thing);
-	    $thing_uri = uri_escape($displayString, ' ?<>');
+	    $thing_uri = uri_escape($displayString, ' ?<>+');
 
             my $thisin;
             my $thisDepth = 1;
@@ -175,10 +178,12 @@ priority naming scheme.
 
 =head1 VERSION
 
-1.8    Allow limiting of tree depth
-       Escape HTML entities and HTTP urls.
+1.9    Widen escaping of URL entities (include + sign).
 
 =head1 VERSION HISTORY
+
+1.8    Allow limiting of tree depth
+       Escape HTML entities and HTTP urls.
 
 1.7    now runs during blosxom filter and no longer uses File::Find
        now much faster generation times since disk access is no more
