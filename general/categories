@@ -121,8 +121,10 @@ sub report_root {
   my $results = report_categories_start();
 #   $results .= report_dir_start('', 'all entries', $stories{$blosxom::datadir});
 
-  foreach (sort @{$children{$blosxom::datadir}}) {
-    $results .= report_dir('/', $_);
+  if ($children{$blosxom::datadir}) {
+    foreach (sort @{$children{$blosxom::datadir}}) {
+      $results .= report_dir('/', $_);
+    }
   }
 
 #   $results .= report_dir_end();
