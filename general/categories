@@ -90,7 +90,7 @@ sub head {
 
     foreach (@path_info) {
       next if !$_;
-      $_ = %friendly_name->{$_} if %friendly_name->{$_};
+      $_ = $friendly_name{$_} if $friendly_name{$_};
       $title .= qq!$name_sep$_!;
     }
   }
@@ -108,7 +108,7 @@ sub story {
 
   foreach (@name) {
     next if !$_;
-    $_ = %friendly_name->{$_} if %friendly_name->{$_};
+    $_ = $friendly_name{$_} if $friendly_name{$_};
     $name .= qq!$name_sep$_!;
   }
 
@@ -138,7 +138,7 @@ sub report_categories_start {
 sub report_dir_start {
   my($fulldir, $thisdir, $numstories) = @_;
   $numstories ||= 0;
-  $thisdir = %friendly_name->{$thisdir} if %friendly_name->{$thisdir};
+  $thisdir = $friendly_name{$thisdir} if $friendly_name{$thisdir};
 
   return qq!<li><a href="$blosxom::url${fulldir}" title="$thisdir">$thisdir</a> ($numstories)\n<ul>\n! if $display_story_count;
   return qq!<li><a href="$blosxom::url${fulldir}" title="$thisdir">$thisdir</a>\n<ul>\n!;
@@ -168,7 +168,7 @@ sub report_dir {
 sub report_dir_leaf {
   my($fulldir, $thisdir, $numstories) = @_;
   $numstories ||= 0;
-  $thisdir = %friendly_name->{$thisdir} if %friendly_name->{$thisdir};
+  $thisdir = $friendly_name{$thisdir} if $friendly_name{$thisdir};
 
   return qq!<li><a href="$blosxom::url${fulldir}" title="$thisdir">$thisdir</a> ($numstories)</li>\n! if $display_story_count;
   return qq!<li><a href="$blosxom::url${fulldir}" title="$thisdir">$thisdir</a></li>\n!;
