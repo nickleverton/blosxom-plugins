@@ -172,7 +172,14 @@ sub filter {
     
     #trim %files
     for (my $i=0;$i<$start-1;$i++) {
-        delete $files->{$sorted[$i]};
+	if (defined $sorted[$i] && defined $files->{$sorted[$i]}) {
+	    delete $files->{$sorted[$i]};
+	} else {
+	    print STDERR "Use of uninitialized value in moreentries: i=$i, sorted=$sorted[$i], files=".$files->{$sorted[$i]}."\n";
+	    print STDERR "_start=".blosxom::param("_start").", start=$start, num_entries=".$blosxom::num_entries.", totalposts=$totalposts, end=$end\n";
+	    print STDERR "request=".$ENV{REQUEST_URI}."\n";
+	    last;
+	}
     }
     for (my $i=$end; $i<$totalposts; $i++) {
         delete $files->{$sorted[$i]};
