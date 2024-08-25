@@ -66,6 +66,8 @@ sub filter
     my ($pkg, $files_ref) = @_;
     my %categorycount;
 
+    return 1 if $display ne "";
+
     foreach (keys %$files_ref)
     {
         $_ =~ s/$blosxom::datadir//;
