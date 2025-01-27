@@ -1,15 +1,26 @@
 # Blosxom plugin: storytitle
 # Author(s): Struan Donald <code@exo.org.uk>
-# Version: 0.6
+# Version: 0.7
 # Documentation: see bottom of file or perldoc title
 
 package storytitle;
 
 use strict;
 use vars
-  qw($sep $right $right_sep $left_sep $page_title $page_title_left $page_title_right);
+  qw($add_blogtitle_to_indexes $add_blogtitle_to_story $prevent_hanging_sep $sep $right $right_sep $left_sep $page_title $page_title_left $page_title_right);
 
 # ------------------ Config variables ---------------------
+
+# do we include the blog title for index pages (chrono & main page)
+$add_blogtitle_to_indexes = 0 unless defined $add_blogtitle_to_indexes;
+
+# do we include the blog title to individual stories
+$add_blogtitle_to_story = 0 unless defined $add_blogtitle_to_story;
+
+# do we prevent hanging separators ?
+# ( 0 maintains compatibility with versions prior to 0.7 ;
+#   1 recommended when we want to include the blog title set by Blosxom)
+$prevent_hanging_sep = 0 unless defined $prevent_hanging_sep;
 
 # default seperator to add to story title
 $sep = ' : ' unless defined $sep;
@@ -39,6 +50,7 @@ sub start { 1; }
 sub head {
     my ( $p, $dir, $head ) = @_;
     my $title;
+    my $story = 0;
     if ( !$dir ) {
         $title =
             ( defined $blosxom::path_info_da ? "$blosxom::path_info_da/" : "" )
@@ -55,27 +67,39 @@ sub head {
             chomp( $title = <$fh> );
             $fh->close;
         }
+        $story = 1;
 
         # debug(1, "Story : title $title");
     }
     if ( defined $title and $title =~ /\S/ ) {
 
         # debug(1, "Defined title");
-        $page_title_right = $right_sep . $title;
-        $page_title_left  = $title . $left_sep;
-        $page_title       = $right ? $page_title_right : $page_title_left;
+        my $add_blogtitle = ( $story && $add_blogtitle_to_story )
+          || ( !$story && $add_blogtitle_to_indexes );
+        my $include_separator = $add_blogtitle || !$prevent_hanging_sep;
+        $page_title_right =
+            ( $add_blogtitle     ? $blosxom::blog_title : "" )
+          . ( $include_separator ? $right_sep           : "" )
+          . $title;
+        $page_title_left =
+            $title
+          . ( $include_separator ? $left_sep            : "" )
+          . ( $add_blogtitle     ? $blosxom::blog_title : "" );
     }
-    else {    # these need to be reset otherwise we'll get the last value
+    else {
         # debug(1, "Other page…");
-        $page_title_right = undef;
-        $page_title_left  = undef;
-        $page_title       = undef;
+        $page_title_right = $page_title_left = ( $prevent_hanging_sep
+              || $add_blogtitle_to_indexes ? $blosxom::blog_title : undef );
     }
+    $page_title = $right ? $page_title_right : $page_title_left;
 }
 
 1;
 
 __END__
+
+=encoding UTF-8
+
 =head1 NAME
 
 Blosxom Plug-in: storytitle
@@ -100,9 +124,14 @@ You can also individually configure the left and right sided seperators with the
 
 =head1 VERSION
 
-0.6
+0.7
 
 =head2 CHANGES
+
+0.7 - Allow inclusion of Blosxom blog title into output (can be configured
+      through new variables $add_blogtitle_to_indexes, $add_blogtitle_to_story
+      and $prevent_hanging_sep)
+      Add debugging code based on <https://metacpan.org/pod/Blosxom::Debug>
 
 0.6 - Now uses the users file extension setting rather than always .txt
 
@@ -118,7 +147,7 @@ You can also individually configure the left and right sided seperators with the
 
 =head1 AUTHOR
 
-Struan Donald <code@exo.org.uk>, http://exo.org.uk/code/
+Struan Donald <https://exo.org.uk/code/>
 
 =head2 CREDITS
 
@@ -126,11 +155,14 @@ Lim Chee Aun <http://phoenity.com/> for the left/right sided titles idea.
 
 Anthony DeLorenzo <anthony.delorenzo@gmail.com> for fix to make it use the users file extension setting.
 
+Barijaona Ramaholimihaso <https://sourceforge.net/u/barijaona/profile/> for optional inclusion of Blosxom's
+blog title.
+
 =head1 SEE ALSO
 
-Blosxom Home/Docs/Licensing:http://blosxom.sourceforge.net/
+Blosxom Home/Docs/Licensing: https://blosxom.sourceforge.net/
 
-Blosxom Plugin Docs: http://blosxom.sourceforge.net/documentation/users/plugins.html
+Blosxom Plugin Docs: https://blosxom.sourceforge.net/documentation/users/plugins.html
 
 =head1 BUGS
 
@@ -139,7 +171,7 @@ development mailing list <blosxom-devel@lists.sourceforge.net>.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2003-2005 Struan Donald.
+Copyright (C) 2003-2025 Struan Donald and contributors.
 
 This program is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
