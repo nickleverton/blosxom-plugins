@@ -382,10 +382,10 @@ sub get_caption
     return undef;
   }
 
-  open ( CAPTIONS, $captions_path ) or
+  open ( my $captions_fh, $captions_path ) or
     die( "Couldn't open $captions_path for reading: $!" );
 
-  while ( <CAPTIONS> )
+  while ( <$captions_fh> )
   {
     my ( $filename, $caption ) = split($captions_filesep, $_, 2) or next;
 
@@ -395,10 +395,7 @@ sub get_caption
     }
   }
 
-  close ( CAPTIONS ) or
-    die( "Couldn't close $captions_path: $!" );
-
-  return undef;
+  return "";
 }
 
 1;
