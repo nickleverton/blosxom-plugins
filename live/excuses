@@ -1,0 +1,126 @@
+# Blosxom Plugin: excuses
+# Author(s):
+#  Original PHP - Peter Lowe // pgl@yoyo.org // http://pgl.yoyo.org/bofh/
+#  Blosxom port - Nick Leverton <nick@leverton.org>
+# Version: 0.0.1
+# Documentation: See the bottom of this file or type: perldoc excuses
+#
+# Credit to:
+#   Jeff Ballard <ballard@NOSPAMcs.wisc.edu> for the original
+#   bofh excuse server: http://www.cs.wisc.edu/~ballard/bofh/
+#
+
+package excuses;
+
+use FileHandle;
+use Storable qw(lock_store lock_nstore lock_retrieve);
+
+# --- Configurable variables -----
+
+# $excusefile can either be a local file like this:
+$excusefile    = "$blosxom::datadir/../excuses.txt";
+# or you can use a url to make sure you're using the latest excuses file:
+#$excusefile     = 'http://www.cs.wisc.edu/~ballard/bofh/excuses';
+
+my $statefile  = "$blosxom::plugin_state_dir/.excuses.state";
+
+# Don't refresh the excuse more often than this (in seconds)
+my $refresh = 3600;
+
+# --- "public" variables ---------
+# (OK so There's More Than One Way To make things private in Perl and I haven't used ANY)
+
+$excuse = '';
+
+# --------------------------------
+
+sub get_state() {
+    # state code nicked from 'gallery' plugin
+    my %state;
+    my $stateref = Storable::lock_retrieve($statefile) if -e $statefile;
+    if(defined $stateref) { %state=\$stateref; } # cheat
+    return \%state;
+}
+
+sub put_state($) {
+
+    my $Pstate = shift @_;
+    # Storable::lock_store(Pstate, $statefile) or print "Unable to cache state information: $!\n";
+}
+
+sub start {
+
+    # it's a heavy operation so only change it once per $refresh
+    my %state = %{get_state};
+    #if (exists $state{excuse} && exists $state{last} && time() > $state{last} + $refresh) {
+    #    $excuse = $state{excuse};
+    #} else {
+	my $fh = new FileHandle;
+	return(undef) unless $fh->open( "<$excusefile" );
+	return(undef) unless my @excuses = <$fh>;
+	$excuse = ucfirst $excuses[ int(rand(@excuses)) ];
+	$excuse =~ s/\s+$//;
+	$excuse .= '.' if $excuse =~ /\w$/;
+	
+	$state{excuse} = $excuse;
+	$state{last}   = time();
+	put_state(\%state);
+    #}
+
+    1;
+}
+
+1;
+
+__END__
+
+=head1 NAME
+
+Blosxom Plug-in: excuses
+
+=head1 SYNOPSIS
+
+$excuses:excuse - serves up BOFH stylee excuses
+
+=head1 VERSION
+
+0.0.1
+
+=head1 AUTHOR
+
+Nick Leverton <nick@leverton.org>, http://www.leverton.org
+
+=head1 SEE ALSO
+
+Blosxom Home/Docs/Licensing: http://www.raelity.org/apps/blosxom/
+
+Blosxom Plugin Docs: http://www.raelity.org/apps/blosxom/plugin.shtml
+
+Blosxom mailing list: http://www.yahoogroups.com/group/blosxom
+
+=head1 BUGS
+
+Address bug reports and comments to Nick Leverton <nick@leverton.org>
+
+=head1 LICENSE
+
+excuses Blosxom plugin
+Copyright 2007, Nick Leverton
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.

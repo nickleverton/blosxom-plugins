@@ -1,0 +1,383 @@
+#!/usr/bin/perl
+#
+# modelines vim:ai ts=8 sw=4
+#
+# Blosxom Plugin: entries_index_tagged
+#
+# Changelog
+# ---------
+# Author(s): Eric Sherman <enkidu@enkidu.bloggedup.com>
+#            Rael Dornfest <rael@oreilly.com> 
+# Version: 2003-05-18 (v0.2)
+#
+# Version: 2008-03-08 (v0+3i) Nick Leverton <nick@leverton.org>
+#	Security: use Storable for the cache, to avoid need to eval a writable file.
+#	Cache real File::stat, to avoid statting every file 3 or 4 times.
+#	Only re-read file to check for date tags if the mtime changes.
+# 
+# Version: 2026-09-28 (v0+4i) Nick Leverton <nick@leverton.org>
+#	Reduce log verbosity with new debug function offering a loglevel.
+#	Fix static render "Argument "1996/07/23" isn't numeric in numeric eq (==)"
+# 
+# Documentation: See the bottom of this file or type: perldoc entries_index_tagged
+#
+# This plugin replaces the default blosxom entries function, and Rael's entries_index plugin.
+
+# TODO make a switch which defaults to off for the additional modules, update the docs in this file
+
+package entries_index_tagged;
+
+use warnings;
+use strict;
+
+# --- Configurable variables -----
+
+use vars qw/ $timestamp_tag $date_tag $debug_level /;
+
+# the tag that specifies the creation date of this story
+$timestamp_tag = "meta-creation_timestamp:" unless defined $timestamp_tag;
+
+# another tag which does the same as the above, except is human writable
+# in a format compatible with Time::ParseDate 
+$date_tag = "meta-creation_date:" unless defined $date_tag;
+
+my $package    = __PACKAGE__;
+
+# 1. FATAL
+# 2. ERROR
+# 3. WARN
+# 4. INFO
+# 5. DEBUG
+# 6. TRACE
+# $debug_level    = $blosxom::debug_level unless defined $debug_level;
+$debug_level    = 3 unless defined $debug_level;
+
+# --- Control variables -----
+
+# Flag: %entries_cache is dirty
+use vars qw/ $reindex /;
+
+{ # add %entries_cache in Blosxom namespace for future merging into main
+    package blosxom;
+    use vars qw/ %entries_cache /;
+}
+
+# --- Template variables -----
+# none
+# --------------------------------
+
+use Fcntl qw/ :DEFAULT :mode /;
+use File::Find;
+use File::Temp ();
+use File::stat;
+use CGI qw/:standard/;
+use POSIX;
+
+use Storable qw/ store_fd retrieve /;
+use Time::ParseDate;
+
+my $entries_cachename = ".entries_index_tagged.index";
+
+# cache compatibility version.  Doesn't need to change with every release, only if incompatible
+my $cache_version = '0.3'; 
+
+sub debug {
+    my ($level, @msg) = @_;
+
+    if ($debug_level >= $level) {
+	print STDERR join(" ", "$package:$level:", @msg) . "\n";
+    }
+    1;
+}
+
+sub start {
+	$reindex = 0;
+	return 1;
+}
+
+sub entries {
+	return sub {
+
+		if (-f "$blosxom::plugin_state_dir/$entries_cachename" ) {
+		    eval { %blosxom::entries_cache = %{ retrieve "$blosxom::plugin_state_dir/$entries_cachename" } };
+		    if ($@) {
+			debug 3, "Ignoring non-storable entries cache from $blosxom::plugin_state_dir/$entries_cachename: $@";
+		    } elsif (!exists $blosxom::entries_cache{'/cache/'}{version} || $blosxom::entries_cache{'/cache/'}{version} ne $cache_version) {
+			debug 3, "Ignoring old format entries cache from $blosxom::plugin_state_dir/$entries_cachename";
+			%blosxom::entries_cache = ();
+		    } else {
+			debug 5, "Retrieved ".keys(%blosxom::entries_cache)." entries from $blosxom::plugin_state_dir/$entries_cachename" if !$@;
+			foreach (keys %blosxom::entries_cache) {
+			    delete $blosxom::entries_cache{$_}{exists};
+			    delete $blosxom::entries_cache{$_}{updated};
+			}
+		    }
+		} else {
+		    debug 3, "No existing $blosxom::plugin_state_dir/$entries_cachename";
+		}
+
+		find( { follow_fast => 1, wanted =>
+		      sub {
+			# ignore if deeper than configured directory depth
+			my $curr_depth = $File::Find::dir =~ tr[/][]; 
+			if ( $blosxom::depth and $curr_depth > $blosxom::depth ) {
+				delete $blosxom::entries_cache{$File::Find::name}; # deletes all subkeys too
+				$File::Find::prune = 1;
+				return;
+			}
+
+			# ignore unreadable files
+			return unless -r $File::Find::name;
+
+			# note that we saw it this time
+			$blosxom::entries_cache{$File::Find::name}{exists} = 1;
+
+			# check modification time, see if file changed. 
+			my $st = File::stat::populate(CORE::stat(_)); # See "man File::stat" for what this does.
+			unless (exists $blosxom::entries_cache{$File::Find::name}{stat}
+				&& $blosxom::entries_cache{$File::Find::name}{stat}->mtime == $st->mtime)
+			{
+			    $blosxom::entries_cache{$File::Find::name}{stat} = $st;
+			    $blosxom::entries_cache{$File::Find::name}{updated} = 1;
+			}
+
+		      }
+		    },
+		    $blosxom::datadir
+		);
+
+		# now load the Blosxom story hashes from entries_cache
+		my( %files, %indexes, %others ) = ();
+
+		foreach my $filename (keys %blosxom::entries_cache) {
+
+		    # ignore the cache meta record(s) and any other non-filenames
+		    next if $filename eq '/cache/';
+		    next unless exists $blosxom::entries_cache{$filename}{stat};
+
+		    # ignore files which have gone away
+		    delete $blosxom::entries_cache{$filename}, $reindex = 1, next
+		        unless exists $blosxom::entries_cache{$filename}{exists};
+
+		    # is it a story file ?
+		    if (
+		        S_ISREG( $blosxom::entries_cache{$filename}{stat}->mode )
+			# a match
+			&& $filename =~ m!^$blosxom::datadir/(?:(.*)/)?([^/]+)\.$blosxom::file_extension$!
+			# not an index, not a dot-file
+			&& $2 ne 'index' && $2 !~ /^\./
+			)
+		    {
+
+			my( $dirname, $basename ) = ($1, $2);
+			$dirname = "" unless defined $dirname;
+
+			my $storytime;
+			# check if file was updated
+			if (exists $blosxom::entries_cache{$filename}{updated})
+			{
+			    # read storytime, defaults to modification time
+			    $storytime = $blosxom::entries_cache{$filename}{storytime} = 
+				decodeDate($filename) || $blosxom::entries_cache{$filename}{stat}->mtime ;
+			    $reindex = 1;
+			} else {
+			    # retrieve storytime from cache
+			    $storytime = $blosxom::entries_cache{$filename}{storytime} ;
+			}
+
+			# to show or not to show future entries
+			next unless ( $blosxom::show_future_entries || $storytime <= time );
+
+			# add the file and its storytime to the list of files
+			$files{$filename} = $storytime;
+		
+			# static rendering bits
+			if ($blosxom::static_dir && @blosxom::static_flavours) {
+			    my $static_file =
+				"$blosxom::static_dir/$dirname/index." . $blosxom::static_flavours[0];
+			    if (   param('-all')
+				or !-f $static_file
+				or (stat $static_file)->mtime <= $blosxom::entries_cache{$filename}{stat}->mtime )
+			    {
+				$indexes{$dirname} = 1;
+				my $d = join( '/', ( blosxom::nice_date($storytime) )[ 5, 2, 3 ] );
+				$indexes{$d} = 1;
+				$indexes{ ( $dirname ? "$dirname/" : '' ) . "$basename.$blosxom::file_extension" } = 1
+				    if $blosxom::static_entries;
+			    }
+			}
+		    }
+
+		    # not an entries match - if regular file, put in %others
+		    elsif ( S_ISREG($blosxom::entries_cache{$filename}{stat}->mode) ) {
+			$others{$filename} = $blosxom::entries_cache{$filename}{stat}->mtime;
+		    }
+
+		    # neither storyfile, static index nor other regular file - ignore
+		    else {
+			if (exists $blosxom::entries_cache{$filename}) {
+			    delete $blosxom::entries_cache{$filename};
+			    $reindex = 1;
+			}
+		    }
+		}
+
+		debug 5, "TOTALPOSTS=".(keys %files)."\n";
+		return (\%files, \%indexes, \%others);
+	};
+}
+
+sub end {
+    if ( $reindex ) {
+	# mark the cache version in the cache
+	$blosxom::entries_cache{'/cache/'}{version} = $cache_version;
+	# Storable 'store' is not atomic so work around it to prevent file corruption
+	my $fh = new File::Temp( DIR => $blosxom::plugin_state_dir,
+				 TEMPLATE => $entries_cachename . ".XXXXX",
+				 UNLINK => 1 );
+	if ( store_fd(\%blosxom::entries_cache, $fh)
+	     && rename($fh, "$blosxom::plugin_state_dir/$entries_cachename") )
+	{
+	    debug 5, "Updated $blosxom::plugin_state_dir/$entries_cachename";
+	} else {
+	    debug 2, "Couldn't update $blosxom::plugin_state_dir/$entries_cachename: $!";
+	}
+    }
+    else {
+	debug 4, "Not Updated $blosxom::plugin_state_dir/$entries_cachename";
+    }
+}
+
+# returns a unix-style mtime from a tag within the file
+sub decodeDate {
+	my ($thisFile) = shift;
+	my $mtime = 0;
+
+	open (FILE, "<", $thisFile) or debug(3, "$thisFile: $!"), return;
+
+	# read the header and return the first time tag found
+	while (my $thisLine = <FILE>) {
+
+		# the timestamp tag takes precedence if both are present
+ 
+		# grab the mtime from the timestamp tag if it exists
+		if ($thisLine =~ /^$timestamp_tag\s+.*$/) {
+			($mtime) = $thisLine =~ m/^$timestamp_tag\s+([0-9]+)$/;
+			return $mtime;
+		}
+		
+		# grab the mtime from the date tag if it exists
+		if ($thisLine =~ /^$date_tag\s+.*$/) {
+			my ($dateString) = $thisLine =~ m/^$date_tag\s+(.*)$/;
+			$mtime = parsedate($dateString);
+			return $mtime;
+		}
+		
+		# stop reading this file when we get to the end of the header
+		# (the first blank line)
+		last if $thisLine =~ /^\s*$/;
+	}
+
+	# no tag
+	return;
+}
+
+# back to polluting the Blosxom namespace - will make it easier to move these routines into blosxom.cgi
+package blosxom;
+
+sub entries_cache_get($$) {
+    my( $filename, $key ) = @_;
+    return undef unless exists $blosxom::entries_cache{$filename}{$key};
+    $blosxom::entries_cache{$filename}{$key};
+}
+
+sub entries_cache_put($$$) {
+    my( $filename, $key, $value ) = @_;
+    $entries_index_tagged::reindex = 1;
+    $blosxom::entries_cache{$filename}{$key} = $value;
+}
+
+1;
+
+__END__
+
+=head1 NAME
+
+Blosxom Plug-in: entries_index_tagged
+
+=head1 SYNOPSIS
+
+Purpose: Preserves original creation timestamp on weblog entries, 
+allowing for editing of entries without altering the original 
+creation time.
+
+Maintains a cache ($blosxom::plugin_state_dir/.entries_index_tagged.index) of 
+filenames and their creation times.  Adds new entries to the index 
+the first time Blosxom encounters them (read: is run after their 
+creation).  Updates the cache when a story file's mtime changes.
+
+This is a hack based on Rael's original entries_index.  This version
+will set the date based on a meta tag, if found.  By default, the tag is
+called meta-creation_timestamp.  It is recommended that you also install
+the meta plugin so that the tag will not be displayed with the story.
+
+The tag should be set to an mtime-style integer.  For instance, 
+meta-creation_timestamp: 105114630 corresponds with April 23, 2003 9:05pm.
+You may create this timestamp manually or with the encodeBlogDates perl 
+script designed for this purpose (see below).  
+
+This functionality is useful if you upload your stories to your host via a
+method that does not preserve the original file's mtime, like FTP.  
+
+Replaces the default $blosxom::entries subroutine, and consequently
+Rael's entries_index plugin.  In other words, don't use entries_index if
+you intend to use this plugin.
+
+=head1 VERSION
+
+2008-03-08 (v0+3i)
+
+=head1 AUTHORS
+
+Eric Sherman (decodeDate) <enkidu@enkidu.bloggedup.com>, L<http://enkidu.bloggedup.com/>
+Rael Dornfest (initial entries_index code) <rael@oreilly.com>, L<http://www.raelity.org/>
+
+=head1 SEE ALSO
+
+encodeBlogDates script: L<http://enkidu.bloggedup.com/files/development/blosxom/entries_index_tagged/encodeBlogDates>
+
+entries_index plugin: L<http://www.raelity.org/apps/blosxom/plugins/indexing/entries_index.individual>
+
+meta plugin: L<http://www.raelity.org/apps/blosxom/plugins/meta/meta.individual>
+
+this plugin: L<http://enkidu.bloggedup.com/blox/development/blosxom/entries_index_tagged/>
+
+Blosxom Plugin Docs: L<http://www.raelity.org/apps/blosxom/plugin.shtml>
+
+=head1 BUGS
+
+Address bug reports and comments to the Blosxom mailing list,
+blosxom-devel@lists.sourceforge.net.
+
+=head1 LICENSE
+
+this Blosxom Plug-in
+Copyright 2003, Eric Sherman
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
