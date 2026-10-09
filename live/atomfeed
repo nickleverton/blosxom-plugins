@@ -11,11 +11,10 @@
 
 package atomfeed;
 
-# ----- Mandatory configurable variables -----
+use warnings;
+use strict;
 
-# For a basic atom feed, you only need set $default_author and $feed_yr.
-# If you do not, the plugin will exit quietly.
-# All other configuration is optional, and can be safely ignored.
+# ----- Configurable variables -----
 
 use vars qw/
 	$default_author
@@ -33,6 +32,12 @@ use vars qw/
 	$css_url
 	$css_type
 /;
+
+# ----- Mandatory configurable variables -----
+
+# For a basic atom feed, you only need set $default_author and $feed_yr.
+# If you do not, the plugin will exit quietly.
+# All other configuration is optional, and can be safely ignored.
 
 # Who would you like your feed to credit as the default author of each entry? 
 # Leave blank and the atomfeed plugin will attempt to use the whoami and
@@ -103,7 +108,39 @@ $css_type = "text/css" unless defined $css_type;
 
 # __END_CONFIG__
 
+# --- Template substitution variables, other than those directly configurable -----
+
+use vars qw/
+	$author
+	$author_email
+	$blog_description
+	$blog_description_type
+	$blog_title
+	$blog_title_type
+	$body
+	$body_type
+	$category
+	$colon
+	$feed_yr
+	$links
+	$published_utc_date
+	$summary
+	$title
+	$title_type
+	$updated_utc_date
+	$utc_yr
+/;
+
+
 # --- Plug-in package variables -----
+
+use vars qw/
+	$T
+	$zerozero
+	$utc_date
+	$feed_utc_date
+	$georss
+/;
 
 $author = '';
 $T = 'T';
@@ -114,13 +151,21 @@ $zerozero = '00';
 $id_domain or ($id_domain) = $blosxom::url =~ m#http://(?:www\.)?([^\/]+)#;
 
 $utc_date = '';
-use vars qw/$feed_utc_date/;
-$category;
-$links;
-$summary;
-$georss;
+#$category;
+#$links;
+#$summary;
+#$georss;
 
 # ----- plugin subroutines -----
+
+use vars qw/
+	$parser
+	%escape
+	$escape_re
+	%unescape
+	$unescape_re
+	$info
+/;
 
 sub start {
 
@@ -201,7 +246,7 @@ sub story {
 
   # <published>: derive from %blosxom::files
   my @published_utc = gmtime($blosxom::files{"$blosxom::datadir$path/$filename.$blosxom::file_extension"});
-  $published_utc_date = sprintf("%4d-%02d-%02dT%02d:%02d:00Z",
+  my $published_utc_date = sprintf("%4d-%02d-%02dT%02d:%02d:00Z",
 				$published_utc[5]+1900,
 				$published_utc[4]+1,
 				$published_utc[3],
@@ -210,7 +255,7 @@ sub story {
 
   # <updated>: derive by stat()ing the file for its mtime:
   my @updated_utc = gmtime(stat("$blosxom::datadir$path/$filename.$blosxom::file_extension")->mtime);
-  $updated_utc_date = sprintf("%4d-%02d-%02dT%02d:%02d:00Z",
+  my $updated_utc_date = sprintf("%4d-%02d-%02dT%02d:%02d:00Z",
 			      $updated_utc[5]+1900,
 			      $updated_utc[4]+1,
 			      $updated_utc[3],
@@ -222,7 +267,7 @@ sub story {
 
   # use %blosxom::files for the year component of feed-level <atom:id>
   # in case the creation time is cached somewhere.
-  $utc_yr = $published_utc[5]+1900;
+  my $utc_yr = $published_utc[5]+1900;
 
   # Set authorship if available, falling back to $atomfeed::author
   $author = $whoami::fullname || $fauxami::name || $default_author || '';
@@ -354,7 +399,7 @@ sub _save_cache {
   local *FH;
   open FH, ">$DataFile" or return 0;
   flock(FH, 2);
-  foreach $url (keys (%{$info})) { 
+  foreach my $url (keys (%{$info})) { 
     print FH $url." ".$info->{$url}->{length} ." ". $info->{$url}->{type}."\n"; 
   }
   close FH;
