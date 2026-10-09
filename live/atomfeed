@@ -5,7 +5,7 @@
 #            Enclosures support: Dave Slusher and Keith Irwin
 #            Upgrade to Atom 1.0 spec: Sam Pearson
 #            Removed static $feed_url, added georss support: Gavin Carr
-# Version: 2007-12-31
+# Version: 2026-10-09
 # Docs: Included below: type "perldoc atomfeed", or scroll down
 # Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
 
@@ -17,44 +17,61 @@ package atomfeed;
 # If you do not, the plugin will exit quietly.
 # All other configuration is optional, and can be safely ignored.
 
+use vars qw/
+	$default_author
+	$feed_yr
+	$author_uri
+	$author_email
+	$copyright
+	$id_domain
+	$icon_url
+	$logo_url
+	$template_placeholder
+	$generator_url
+	$use_full_enclosures
+	$DataFile
+	$css_url
+	$css_type
+/;
+
 # Who would you like your feed to credit as the default author of each entry? 
 # Leave blank and the atomfeed plugin will attempt to use the whoami and
 # fauxami plugins
-$default_author = "";
+$default_author = "" unless defined $default_author;
 
 # What year was your weblog started?  This will be used 
 # to form part of your weblog's unique ID.
-$feed_yr = "";
+$feed_yr = "" unless defined $feed_yr;
 
 # ----- Optional configurable variables -----
 
 # What is the default author's URL?
 # Blank defaults to $blosxom::url
-$author_uri = "";
+$author_uri = "" unless defined $author_uri;
 
 # What is the default author's email address?
 # Leave blank to exclude.
-$author_email = '';
+$author_email = '' unless defined $author_email;
 
 # Copyright statement:
 # leave blank to exclude.
-$copyright = "";
+$copyright = "" unless defined $copyright;
 
 # What domain should Blosxom use in ID tags?
 # Leave blank if you don't understand or for Blosxom to use the domain in $url.
-$id_domain = "";
+$id_domain = "" unless defined $id_domain;
 
 # Icon
 # Put the URL for a site icon here (for example, your site's favicon).  Leave blank to exclude.
-$icon_url = "";
+$icon_url = "" unless defined $icon_url;
 
 # Logo
 # Set to the URL for your site logo.  Leave blank to exclude.
-$logo_url = "";
+$logo_url = "" unless defined $logo_url;
 
 # What template placeholder in your flavour template should I replace with feed-level <updated>?
 # If you are using the built-in templates, leave this alone.
-my $template_placeholder = "{{{updated}}}";
+$template_placeholder = "{{{updated}}}" unless defined $template_placeholder;
 
 # Generator that produced this feed
 $generator_url = "http://blosxom.sourceforge.net/";
@@ -68,19 +85,19 @@ $generator_url = "http://blosxom.sourceforge.net/";
 # Set $use_full_enclosures to 1 if you wish to add length and content-type
 # to your enclosures.  This function relies upon your webserver having 
 # LWP modules installed.
-$use_full_enclosures = '0';
+$use_full_enclosures = '0' unless defined $use_full_enclosures;
 
 # Name of a file to cache info about your enclosures:
-$DataFile = "$blosxom::plugin_state_dir/enclosures.dat";
+$DataFile = "$blosxom::plugin_state_dir/enclosures.dat" unless defined $DataFile;
 
 # Stylesheet support
 # ------------------
 
 # If you have a stylesheet to associate with your atom feed, place it's URL here.
-$css_url = "";
+$css_url = "" unless defined $css_url;
 
 # You can specify the type of stylesheet here:
-$css_type = "text/css";
+$css_type = "text/css" unless defined $css_type;
 
 # ----- END OF CONFIGURABLE VARIABLES -----
 
