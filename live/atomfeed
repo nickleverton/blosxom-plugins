@@ -79,7 +79,7 @@ $logo_url = "" unless defined $logo_url;
 $template_placeholder = "{{{updated}}}" unless defined $template_placeholder;
 
 # Generator that produced this feed
-$generator_url = "http://blosxom.sourceforge.net/";
+$generator_url = "https://blosxom.sourceforge.net/";
 
 # Enclosures support
 # ------------------
@@ -115,6 +115,7 @@ use vars qw/
 	$author_email
 	$blog_description
 	$blog_description_type
+	$id_scheme
 	$blog_title
 	$blog_title_type
 	$body
@@ -147,8 +148,10 @@ $T = 'T';
 $colon = ':';
 $zerozero = '00';
 
-# Try to glean the domain from $url
-$id_domain or ($id_domain) = $blosxom::url =~ m#http://(?:www\.)?([^\/]+)#;
+# Try to glean the URI scheme and domain from $url
+my( $url_scheme, $url_domain ) = $blosxom::url =~ m#(https?)://(?:www\.)?([^\/]+)#;
+$id_scheme or $id_scheme = $url_scheme;
+$id_domain or $id_domain = $url_domain;
 
 $utc_date = '';
 #$category;
@@ -597,6 +600,11 @@ individual entries.  By default it'll attempt to glean your domain
 from the specified or calculated value of B<$blosxom::url>, but you can
 override this by setting this variable.
 
+B<$id_scheme> This variable can be set to "http" or "https" depending
+on whether TLS is required to access the feed.  By default Atom will
+attempt to extract the scheme from the value of B<$blosxom::url>, but
+you can override this by setting this variable.
+
 B<$icon_url> Set this variable to the URL of an icon to associate with
 your site.  This should be a small image with a 1:1 aspect ratio -
 favicons are ideal.  Leave blank to exclude.
@@ -731,7 +739,7 @@ Ideally, enclosures should also contain information on their length
 determine this information if you set the B<$use_full_enclosures>
 variable to '1'.  To make sure this works correctly, you should link
 to the anclosure using an absolute URL rather than a relative one -
-"http://example.com/podcasts/july-05.mp3" instead of
+"https://example.com/podcasts/july-05.mp3" instead of
 "/podcasts/july-05.mp3" - even if the enclosure is hosted under the
 same domain.
 
@@ -778,9 +786,9 @@ browser for it to work as intended.
 
 =head1 SEE ALSO
 
-Blosxom Home/Docs/Licensing: http://blosxom.sourceforge.net/
+Blosxom Home/Docs/Licensing: https://blosxom.sourceforge.net/
 
-Blosxom Plugin Docs: http://blosxom.sourceforge.net/documentation/users/plugins.html
+Blosxom Plugin Docs: https://blosxom.sourceforge.net/documentation/users/plugins.html
 
 1.0 Update Release Notes:
 http://sgp.me.uk/sam/2005/08/04/atom-for-blosxom
